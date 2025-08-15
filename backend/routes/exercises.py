@@ -27,7 +27,7 @@ async def read_all_exercises():
 @router.get("/exercises/{exercise_id}")
 async def read_exercise(exercise_id: int):
     for exercise in exercises:
-        if exercise["exercise_id"] == exercise_id:
+        if exercise.exercise_id == exercise_id:
             return exercise
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
 
