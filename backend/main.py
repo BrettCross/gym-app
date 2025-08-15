@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import exercises
+from routes import exercises, ping
 
 app = FastAPI()
 
@@ -13,11 +13,8 @@ app = FastAPI()
 # Update ->     PUT / PATCH
 # Delete ->     DELETE
 
+app.include_router(ping.router)
 app.include_router(exercises.router)
-
-@app.get("/ping")
-def ping():
-    return {"message":"pong"}
 
 @app.get("/")
 async def read_root():
