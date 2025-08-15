@@ -1,21 +1,21 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status, HTTPException
 from pydantic import BaseModel
 
-router = APIRouter(tags=["exercises"])
 
+router = APIRouter(tags=["exercises"])
 
 class Exercise(BaseModel):
     exercise_id: int
     name: str
 
 exercises = [
-    {"exercise_id": 1, "name": "Push Up"}, 
-    {"exercise_id": 2, "name": "Squat"}, 
-    {"exercise_id": 3, "name": "Sit Up"}
+    Exercise(exercise_id=1, name="Push Up"), 
+    Exercise(exercise_id=2, name="Squat"),
+    Exercise(exercise_id=3, name="Sit Up")
 ]
 
 # Exercise Endpoints
-@router.post("/exercises/")
+@router.post("/exercises/", response_model=Exercise, status_code=status.HTTP_201_CREATED)
 async def create_exercise(exercise: Exercise):
     exercises.append(exercise)
     return exercise
@@ -29,12 +29,12 @@ async def read_exercise(exercise_id: int):
     for exercise in exercises:
         if exercise["exercise_id"] == exercise_id:
             return exercise
-    return {"error": "Exercise not found"}
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
 
 @router.delete("/exercises/{exercise_id}")
 async def delete_exercise(exercise_id: int):
     for exercise in exercises:
-        if exercise["exercise_id"] == exercise_id:
+        if exercise.exercise_id == exercise_id:
             exercises.remove(exercise)
             return {"message": "Exercise successfully deleted"}
-    return {"error": "Exercise not found"}
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")

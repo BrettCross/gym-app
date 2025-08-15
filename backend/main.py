@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import exercises
+from routers import exercises
 
 app = FastAPI()
 
@@ -21,4 +21,4 @@ def ping():
 
 @app.get("/")
 async def read_root():
-    return {"message": "YES QUEEN!"}
+    return {"message": "Welcome to the Workout Tracker API"}
