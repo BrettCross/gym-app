@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from models.user import User
 from schemas.user import UserCreate, UserRead
-from typing import List
 
 router = APIRouter()
 
@@ -32,7 +31,7 @@ async def create_user(user: UserCreate):
         full_name=user_doc.full_name,
     )
 
-@router.get("/users", response_model=List[UserRead])
+@router.get("/users", response_model=list[UserRead])
 async def list_users():
     users = await User.find_all().to_list()
     return [
