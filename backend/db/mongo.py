@@ -2,9 +2,10 @@ import os
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 from dotenv import load_dotenv
-
 from models.user import User
 from models.exercise import Exercise
+from models.workout import Workout
+
 
 load_dotenv()
 
@@ -19,4 +20,4 @@ async def init_db():
     print("Got database!")
     print("retrieving collection names...")
     print(await db.list_collection_names())
-    await init_beanie(database=db, document_models=[User, Exercise])
+    await init_beanie(database=db, document_models=[User, Exercise, Workout])

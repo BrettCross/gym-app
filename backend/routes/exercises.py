@@ -12,7 +12,7 @@ async def create_exercise(exercise: ExerciseCreate):
     # check if exercise exists
     does_exist = await Exercise.find_one(Exercise.name == exercise.name)
     if does_exist:
-        raise HTTPException(status_code=400, detail="Exercise already registered")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Exercise already registered")
     
     # create/save exercise to Mongo
     exer_doc = Exercise(
@@ -48,33 +48,35 @@ async def list_exercises(
         query["muscleGroup"] = {"$regex": muscleGroup, "$options": "i"}
 
     exercises = await Exercise.find(query).to_list()
-    if len(exercises) > 0:
-        return [
-            ExerciseRead(
-                id=str(exercise.id),
-                name=exercise.name,
-                equipment=exercise.equipment,
-                muscleGroup=exercise.muscleGroup,
-                exerciseType=exercise.exerciseType
-            )
-            for exercise in exercises
-        ]
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercises not found")
-
-# Read Exercise with ID - backend use
-@router.get("/exercises/{exercise_id}", response_model=ExerciseRead, status_code=status.HTTP_200_OK)
-async def read_exercise(exercise_id: PydanticObjectId):
-    exercise = await Exercise.get(exercise_id)
-    print(exercise)
-    if exercise != None:
-        return ExerciseRead(
+    if len(exercises) == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercises not found")
+    
+    return [
+        ExerciseRead(
             id=str(exercise.id),
             name=exercise.name,
             equipment=exercise.equipment,
             muscleGroup=exercise.muscleGroup,
             exerciseType=exercise.exerciseType
         )
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
+        for exercise in exercises
+    ]
+
+# Read Exercise with ID - backend use
+@router.get("/exercises/{exercise_id}", response_model=ExerciseRead, status_code=status.HTTP_200_OK)
+async def read_exercise(exercise_id: PydanticObjectId):
+    exercise = await Exercise.get(exercise_id)
+
+    if not exercise:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
+    
+    return ExerciseRead(
+        id=str(exercise.id),
+        name=exercise.name,
+        equipment=exercise.equipment,
+        muscleGroup=exercise.muscleGroup,
+        exerciseType=exercise.exerciseType
+    )
 
 @router.put("/exercises/{exercise_id}", response_model=ExerciseRead, status_code=status.HTTP_200_OK)
 async def update_exercise(exercise_id: PydanticObjectId, exercise_update: ExerciseUpdate):
