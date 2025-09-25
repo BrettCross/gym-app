@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from db.mongo import init_db
 
 
-from routes import exercises, ping, users, workouts
+from routes import exercises, ping, users, workouts, sessions
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,6 +29,7 @@ app.include_router(ping.router)
 app.include_router(exercises.router)
 app.include_router(users.router)
 app.include_router(workouts.router)
+app.include_router(sessions.router)
 
 # @app.get("/")
 # async def read_root():

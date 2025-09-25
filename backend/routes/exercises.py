@@ -78,6 +78,7 @@ async def read_exercise(exercise_id: PydanticObjectId):
         exerciseType=exercise.exerciseType
     )
 
+# Update Exercise
 @router.put("/exercises/{exercise_id}", response_model=ExerciseRead, status_code=status.HTTP_200_OK)
 async def update_exercise(exercise_id: PydanticObjectId, exercise_update: ExerciseUpdate):
     exercise = await Exercise.get(exercise_id)
@@ -98,6 +99,7 @@ async def update_exercise(exercise_id: PydanticObjectId, exercise_update: Exerci
         exerciseType=exercise.exerciseType
     )
 
+# Delete Exercise
 @router.delete("/exercises/{exercise_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_exercise(exercise_id: PydanticObjectId):
     exercise = await Exercise.get(exercise_id)

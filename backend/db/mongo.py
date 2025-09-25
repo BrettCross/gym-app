@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from models.user import User
 from models.exercise import Exercise
 from models.workout import Workout
+from models.session import Session
 
 
 load_dotenv()
@@ -20,4 +21,4 @@ async def init_db():
     print("Got database!")
     print("retrieving collection names...")
     print(await db.list_collection_names())
-    await init_beanie(database=db, document_models=[User, Exercise, Workout])
+    await init_beanie(database=db, document_models=[User, Exercise, Workout, Session])
