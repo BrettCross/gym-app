@@ -1,5 +1,5 @@
 from beanie import PydanticObjectId
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
 
@@ -24,7 +24,13 @@ class SessionRead(BaseModel):
     date: datetime
     exercises: list[ExerciseProgressBase]
 
-    class Config:
+    model_config = ConfigDict(
         json_encoders = {
-            PydanticObjectId: str   # serialize PydanticObjectId -> str
+            PydanticObjectId: str
         }
+    )
+
+    # class Config:
+    #     json_encoders = {
+    #         PydanticObjectId: str   # serialize PydanticObjectId -> str
+    #     }

@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, status
+from fastapi.testclient import TestClient
 from contextlib import asynccontextmanager
 from db.mongo import init_db
+import os
 
 
 from routes import exercises, ping, users, workouts, sessions
@@ -8,9 +10,12 @@ from routes import exercises, ping, users, workouts, sessions
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    await init_db()
+    client = await init_db()
     yield
     # Shutdown
+    if os.getenv("ENV") == "test":
+        client.drop_database("gym_app_test")
+    client.close()
     # (close db connection here if needed)
 
 app = FastAPI(lifespan=lifespan)

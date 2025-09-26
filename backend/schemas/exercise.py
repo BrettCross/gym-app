@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from beanie import PydanticObjectId
 
 class ExerciseCreate(BaseModel):
@@ -15,10 +15,16 @@ class ExerciseRead(BaseModel):
     muscleGroup: list[str]
     exerciseType: str
 
-    class Config:
+    model_config = ConfigDict(
         json_encoders = {
-            PydanticObjectId: str   # serialize PydanticObjectId -> str
+            PydanticObjectId: str
         }
+    )
+
+    # class Config:
+    #     json_encoders = {
+    #         PydanticObjectId: str   # serialize PydanticObjectId -> str
+    #     }
 
 class ExerciseUpdate(BaseModel):
     name: str | None = None

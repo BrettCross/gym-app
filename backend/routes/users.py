@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from models.user import User
 from schemas.user import UserCreate, UserRead
 
 router = APIRouter()
 
-@router.post("/users", response_model=UserRead)
+@router.post("/users", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def create_user(user: UserCreate):
     # check if user exists
     userExists = await User.find_one(User.email == user.email)
@@ -31,7 +31,7 @@ async def create_user(user: UserCreate):
         full_name=user_doc.full_name,
     )
 
-@router.get("/users", response_model=list[UserRead])
+@router.get("/users", response_model=list[UserRead], status_code=status.HTTP_200_OK)
 async def list_users():
     users = await User.find_all().to_list()
     return [
