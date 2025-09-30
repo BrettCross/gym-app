@@ -6,7 +6,7 @@ from schemas.exercise import ExerciseCreate, ExerciseRead, ExerciseUpdate
 
 router = APIRouter(tags=["exercises"])
 
-# Exercise Endpoints
+# Create Exercise
 @router.post("/exercises", response_model=ExerciseRead, status_code=status.HTTP_201_CREATED)
 async def create_exercise(exercise: ExerciseCreate):
     # check if exercise exists
