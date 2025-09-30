@@ -1,5 +1,4 @@
-from fastapi import FastAPI, status
-from fastapi.testclient import TestClient
+from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from db.mongo import init_db
 import os
