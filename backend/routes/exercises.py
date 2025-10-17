@@ -4,7 +4,7 @@ from backend.models.exercise import Exercise
 from backend.models.user import User
 from backend.schemas.exercise import ExerciseCreate, ExerciseRead, ExerciseUpdate
 from datetime import datetime
-from backend.db.mongo import get_database
+from backend.database import get_database
 
 
 router = APIRouter(tags=["exercises"])

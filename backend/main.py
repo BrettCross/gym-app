@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 # Assuming db/mongo.py now contains the refactored init_db(uri)
-from backend.db.mongo import init_db 
+from backend.database import init_db 
 import os 
 from motor.motor_asyncio import AsyncIOMotorClient
 
