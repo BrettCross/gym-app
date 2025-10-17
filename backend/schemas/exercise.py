@@ -1,19 +1,24 @@
 from pydantic import BaseModel, ConfigDict
 from beanie import PydanticObjectId
+from datetime import datetime
 
 class ExerciseCreate(BaseModel):
+    userID: str
     name: str
     equipment: list[str]
     muscleGroup: list[str]
     exerciseType: str
+    createdAt: datetime | None = None
     
 
 class ExerciseRead(BaseModel):
     id: str
+    userID: str
     name: str
     equipment: list[str]
     muscleGroup: list[str]
     exerciseType: str
+    createdAt: datetime
 
     model_config = ConfigDict(
         json_encoders = {
