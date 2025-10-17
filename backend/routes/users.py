@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
-from models.user import User
-from schemas.user import UserCreate, UserRead
+from backend.models.user import User
+from backend.schemas.user import UserCreate, UserRead
 
 router = APIRouter()
 
@@ -9,7 +9,7 @@ async def create_user(user: UserCreate):
     # check if user exists
     userExists = await User.find_one(User.email == user.email)
     if userExists:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
     
     # hash the password
     hashed_password = "_HASH_" + user.password
