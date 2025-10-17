@@ -1,8 +1,8 @@
 from fastapi import APIRouter, status, HTTPException
 from beanie import PydanticObjectId
 from datetime import datetime
-from models.session import Session, ExerciseProgress, SetProgress
-from schemas.session import SessionCreate, SessionRead
+from backend.models.session import Session, ExerciseProgress, SetProgress
+from backend.schemas.session import SessionCreate, SessionRead
 
 
 router = APIRouter(tags=["sessions"])

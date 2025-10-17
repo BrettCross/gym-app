@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status, HTTPException
 from beanie import PydanticObjectId
-from models.workout import Workout
-from schemas.workout import WorkoutCreate, WorkoutRead, WorkoutUpdate
+from backend.models.workout import Workout
+from backend.schemas.workout import WorkoutCreate, WorkoutRead, WorkoutUpdate
 
 
 router = APIRouter(tags=["workouts"])
