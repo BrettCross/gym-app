@@ -12,3 +12,13 @@ class UserRead(BaseModel):
     username: str
     email: EmailStr
     full_name: str | None = None
+
+# class User(BaseModel):
+#     username: str
+#     email: str | None = None
+#     full_name: str | None = None
+#     disabled: bool | None = None
+
+
+class UserInDB(UserRead):
+    hashed_password: str
