@@ -16,9 +16,9 @@ function App() {
   return (
     <>
       {isAuthd ? 
-      // (<Home />) :
       (<ExerciseList />) :
       (<LoginForm onLogin={handleLogin} />)}
+      {/* <ExerciseList /> */}
     </>
   )
 }
