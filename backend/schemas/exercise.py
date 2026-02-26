@@ -3,7 +3,7 @@ from beanie import PydanticObjectId
 from datetime import datetime
 
 class ExerciseCreate(BaseModel):
-    userID: str
+    # userID: str
     name: str
     equipment: list[str]
     muscleGroup: list[str]

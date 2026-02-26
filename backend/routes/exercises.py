@@ -17,20 +17,11 @@ router = APIRouter(tags=["exercises"])
 async def create_exercise(
     exercise: ExerciseCreate,
     current_user: Annotated[User, Depends(auth.get_current_active_user)]):
-    # check if exercise exists
-    exercise_exists = await Exercise.find_one(Exercise.name == exercise.name)
+    # check if exercise exists for user
+    exercise_exists = await Exercise.find_one(Exercise.userID == PydanticObjectId(current_user.id)).find_one(Exercise.name == exercise.name)
     
-    # check if user exists
-    # user_exists = await get_database().get_collection("users").find_one(User.id == PydanticObjectId(exercise.userID))
-    # print(f"user_exists {exercise.userID}: {user_exists}")
-    # print(f"exercise_exists: {exercise_exists}")
-
-
     if exercise_exists:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Exercise already registered")
-    
-    # if not user_exists:
-    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
     
     # create/save exercise to Mongo
     exer_doc = Exercise(
@@ -69,8 +60,9 @@ async def list_exercises(
         query["equipment"] = {"$regex": equipment, "$options": "i"}
     if muscleGroup:
         query["muscleGroup"] = {"$regex": muscleGroup, "$options": "i"}
-    
-    exercises = await Exercise.find(query).to_list()
+
+    exercises = await Exercise.find(Exercise.userID == PydanticObjectId(current_user.id)).find(query).to_list()
+
     if len(exercises) == 0:
         # raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercises not found")
         return []
@@ -78,7 +70,7 @@ async def list_exercises(
     return [
         ExerciseRead(
             id=str(exercise.id),
-            userID=current_user.id,
+            userID=str(exercise.userID),
             name=exercise.name,
             equipment=exercise.equipment,
             muscleGroup=exercise.muscleGroup,
