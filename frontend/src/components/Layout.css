@@ -1,0 +1,13 @@
+.layout-container {
+  display: flex;
+}
+
+.sidebar {
+  width: 250px;
+  padding: 1rem;
+  border: 1px solid blue;
+}
+
+.main-content {
+  flex: 1;
+}

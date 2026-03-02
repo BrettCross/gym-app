@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
+import { Route, Routes, Navigate, useNavigate } from 'react-router-dom'
 
-import LoginForm from '@components/LoginForm'
-import ExerciseList from '@components/ExerciseList'
 import './App.css'
 import apiService from './utils/apiService'
+import ExerciseList from '@components/ExerciseList'
+import Home from '@components/Home'
+import Layout from '@components/layout'
+import LoginForm from '@components/LoginForm'
+import Routines from '@components/Routines'
 
 
 function App() {
@@ -29,8 +33,11 @@ function App() {
       verifyAuth();
     }, []);
 
+    const navigate = useNavigate();
+
     const handleLogin = (auth_status) => {
-      setIsAuthd(auth_status)
+      setIsAuthd(auth_status);
+      navigate('/')
     }
 
   if (isLoading) {
@@ -39,10 +46,19 @@ function App() {
 
   return (
     <>
-      {isAuthd ? 
-      (<ExerciseList />) :
-      (<LoginForm onLogin={handleLogin} />)}
-      {/* <ExerciseList /> */}
+      <Routes>
+        {isAuthd ? (
+          <Route element={<Layout />}>
+            <Route path='/' element={<Home />} />
+            <Route path='/exercises' element={<ExerciseList />} />
+            <Route path='/routines' element={<Routines />} />
+          </Route>
+        ) : (
+          <Route path='*' element={<Navigate to='/login' />} />
+        )}
+        <Route path='/login' element={<LoginForm onLogin={handleLogin} />} />
+        {/* <ExerciseList /> */}
+      </Routes>
     </>
   )
 }
