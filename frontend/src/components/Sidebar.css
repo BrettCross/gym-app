@@ -1,0 +1,19 @@
+.nav-sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 1rem;
+  /* border-right: 1px solid #ccc; */
+  border: 1px solid red;
+  width: 12rem;
+}
+
+.nav-sidebar ul {
+  padding: 0;
+  list-style: none;
+}
+
+.nav-sidebar li {
+  margin: 3rem 0;
+
+}
