@@ -68,15 +68,10 @@ export default function LoginForm({ onLogin }) {
                 Login
               </button>
             </div>
-            {/* <div className="footer-options">
-              <label>
-                <input type="checkbox" defaultChecked="checked" name="remember" />{" "}
-                Remember me
-              </label>
-              <span className="psw">
-                <a href="#">Forgot password?</a>
-              </span>
-            </div> */}
+            <div className="footer-options">
+              <p>Don't have an account?</p>
+              <Link to='/register'>Sign up</Link>
+            </div>
           </form>
         </div>
       </div>

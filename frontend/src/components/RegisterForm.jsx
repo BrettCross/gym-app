@@ -1,7 +1,8 @@
-import { useState } from "react"
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import apiService from "@utils/apiService";
 
-export default function RegisterForm() {
+export default function RegisterForm({ onLogin }) {
   const [user, setUser] = useState(
     {
       username: "",
@@ -14,8 +15,7 @@ export default function RegisterForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const fullName = user.firstName.trim() + " " + user.lastName.trim();
-    console.log(`Registered:${fullName}\n${user.email}\n${user.username}\n${user.password}`)
+    const fullName = `${user.firstName} ${user.lastName}`;
     
     const response = await apiService.post('/users', {
       email: user.email,
@@ -24,6 +24,30 @@ export default function RegisterForm() {
       full_name: fullName
     });
     console.log(response);
+    
+    if (response.status == 201) {
+      const tokenResponse = await apiService.post('/token', {
+        username: user.username,
+        password: user.password
+      }, {
+        headers: {
+          "Content-Type":"multipart/form-data"
+        },
+        withCredentials: true // Sends cookies/session
+      });
+
+      const token = tokenResponse.data.access_token;
+      try {
+        console.log(token)
+        localStorage.setItem('jwtToken', token)
+        onLogin(true)
+      } catch (error) {
+        console.error(error.response.data)
+      }
+    }
+
+    // if successful, log them in
+    // call post('/token') -> store token -> onLogin(true)
   };
 
   return (
@@ -38,8 +62,8 @@ export default function RegisterForm() {
               <label htmlFor="Name">Name</label>
               <input
                 type="text"
-                value={user.first_name} 
-                onChange={(e) => setUser({...user, first_name: e.target.value})} 
+                value={user.firstName} 
+                onChange={(e) => setUser({...user, firstName: e.target.value})} 
                 id="first_name"
                 name="first_name"
                 placeholder="First Name"
@@ -47,8 +71,8 @@ export default function RegisterForm() {
               />
               <input
                 type="text"
-                value={user.last_name} 
-                onChange={(e) => setUser({...user, last_name: e.target.value})} 
+                value={user.lastName} 
+                onChange={(e) => setUser({...user, lastName: e.target.value})} 
                 id="last_name"
                 name="last_name"
                 placeholder="Last Name (optional)"
@@ -95,15 +119,10 @@ export default function RegisterForm() {
                 Sign Up
               </button>
             </div>
-            {/* <div className="footer-options">
-              <label>
-                <input type="checkbox" defaultChecked="checked" name="remember" />{" "}
-                Remember me
-              </label>
-              <span className="psw">
-                <a href="#">Forgot password?</a>
-              </span>
-            </div> */}
+            <div className="footer-options">
+              <p>Already have an account?</p>
+              <Link to='/login'>Log in</Link>
+            </div>
           </form>
         </div>
       </div>

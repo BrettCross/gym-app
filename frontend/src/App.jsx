@@ -8,6 +8,7 @@ import Home from '@components/Home'
 import Layout from '@components/layout'
 import LoginForm from '@components/LoginForm'
 import Routines from '@components/Routines'
+import RegisterForm from './components/RegisterForm'
 
 
 function App() {
@@ -57,7 +58,7 @@ function App() {
           <Route path='*' element={<Navigate to='/login' />} />
         )}
         <Route path='/login' element={<LoginForm onLogin={handleLogin} />} />
-        {/* <ExerciseList /> */}
+        <Route path='/register' element={<RegisterForm onLogin={handleLogin} />} />
       </Routes>
     </>
   )
