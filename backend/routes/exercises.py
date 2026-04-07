@@ -51,8 +51,8 @@ async def list_exercises(
     current_user: Annotated[User, Depends(auth.get_current_active_user)],
     name: str | None = None, 
     equipment: str | None = None, 
-    muscleGroup: str | None = None,
-):
+    muscleGroup: str | None = None):
+
     query = {}
     if name:
         query["name"] = {"$regex": name, "$options": "i"}

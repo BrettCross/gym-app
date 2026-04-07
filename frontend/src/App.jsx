@@ -3,12 +3,13 @@ import { Route, Routes, Navigate, useNavigate } from 'react-router-dom'
 
 import './App.css'
 import apiService from './utils/apiService'
-import ExerciseList from '@components/ExerciseList'
+import Exercises from '@components/Exercises'
 import Home from '@components/Home'
 import Layout from '@components/layout'
 import LoginForm from '@components/LoginForm'
-import Routines from '@components/Routines'
+import Workouts from '@components/Workouts'
 import RegisterForm from './components/RegisterForm'
+import WorkoutDetail from './components/WorkoutDetail'
 
 
 function App() {
@@ -51,8 +52,9 @@ function App() {
         {isAuthd ? (
           <Route element={<Layout />}>
             <Route path='/' element={<Home />} />
-            <Route path='/exercises' element={<ExerciseList />} />
-            <Route path='/routines' element={<Routines />} />
+            <Route path='/exercises' element={<Exercises />} />
+            <Route path='/workouts' element={<Workouts />} />
+            <Route path='/workouts/:id' element={<WorkoutDetail />} />
           </Route>
         ) : (
           <Route path='*' element={<Navigate to='/login' />} />

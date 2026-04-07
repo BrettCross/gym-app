@@ -134,7 +134,7 @@ async def read_workout(
         exercises=workout_exercises
     )
 
-@router.patch("/workouts/{workout_id}", response_model=WorkoutRead, status_code=status.HTTP_200_OK)
+@router.patch("/workouts/{workout_id}", response_model=WorkoutDetailRead, status_code=status.HTTP_200_OK)
 async def update_workout(
     workout_id: PydanticObjectId,
     workout_update: WorkoutUpdate,
@@ -152,24 +152,31 @@ async def update_workout(
 
     await workout.save()
 
-    return WorkoutRead(
+    workout_exercises = []
+
+    for e in workout.exercises:
+        exercise = await Exercise.get(e.exercise_id)
+        workout_exercises.append(WorkoutExerciseDetail(
+            exercise_id=str(e.exercise_id),
+            order=e.order,
+            name=exercise.name,
+            equipment=exercise.equipment,
+            muscleGroup=exercise.muscleGroup,
+            exerciseType=exercise.exerciseType,
+            sets=[
+                SetSchema(
+                    weight=s.weight,
+                    reps=s.reps
+                )
+                for s in e.sets
+            ]
+        ))
+    
+    return WorkoutDetailRead(
         id=str(workout.id),
         user_id=str(workout.user_id),
         name=workout.name,
-        exercises=[
-            WorkoutExerciseSchema(
-                exercise_id=e.exercise_id,
-                order=e.order,
-                sets=[
-                    SetSchema(
-                        weight=s.weight,
-                        reps=s.reps
-                    )
-                    for s in e.sets
-                ]
-            )
-            for e in workout.exercises
-        ]
+        exercises=workout_exercises
     )
 
 @router.delete("/workouts/{workout_id}", status_code=status.HTTP_204_NO_CONTENT)

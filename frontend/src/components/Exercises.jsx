@@ -92,7 +92,7 @@ function ExerciseForm({ onExerciseAdded, exerciseToEdit }) {
   );
 }
 
-export default function ExerciseList() {
+export default function Exercises() {
 
   // Define and set state
   const [exercises, setExercises] = useState([]);
@@ -102,12 +102,6 @@ export default function ExerciseList() {
   // const [showForm, setShowForm] = useState(false);
 
   const dialogRef = useRef(null);
-
-  // // Get exercises from Database
-  // const loadExercises = async() => {
-  //   const response = await apiService.get('/exercises');
-  //   setExercises(response.data);
-  // };
 
   const handleShowForm = (exercise) => {
     // setShowForm(true);
@@ -131,12 +125,8 @@ export default function ExerciseList() {
   const handleDelete = async (exerciseID) => {
     await apiService.delete(`/exercises/${exerciseID}`);
     setExercises(exercises.filter(ex => ex.id !== exerciseID));
-  }
+  };
   
-  // Load all books when component is first mounted
-  // useEffect(() => {
-  //   loadExercises();
-  // }, []);
   useEffect(() => {
     const fetchData = async () => {
       const response = await apiService.get('/exercises');

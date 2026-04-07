@@ -7,7 +7,7 @@ export default function Sidebar() {
       <ul>
         <li><Link to="/">Home</Link></li>
         <li><Link to="/exercises">Exercises</Link></li>
-        <li><Link to="/routines">Routines</Link></li>
+        <li><Link to="/workouts">Workouts</Link></li>
       </ul>
     </nav>
   );
