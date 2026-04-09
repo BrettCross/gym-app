@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import apiService from '@utils/apiService';
 
 export default function WorkoutDetail() {
@@ -163,7 +163,6 @@ export default function WorkoutDetail() {
         onChange={(e) => setSearchQuery(e.target.value)}
       />
       {filteredExercises.map((exercise) => (
-        // <div key={exercise.id} onClick={() => handleSelectExercise(exercise)}>
         <div key={exercise.id} onClick={() => handleToggleExercise(exercise)}>
         {exercise.name}
         </div>
@@ -171,6 +170,9 @@ export default function WorkoutDetail() {
       <button className='button-3' onClick={() => handleConfirmAddExercises()}>Add</button>
     </dialog>
     <div className='container-v'>
+      <Link to="/workouts">
+        <button>Back</button>
+      </Link>
         {isEditing ? (
         <div className='container-h'>
           <input 
@@ -221,14 +223,11 @@ export default function WorkoutDetail() {
             {isEditing && (
               <button onClick={() => handleAddSet(exercise.exercise_id)}>Add Set</button>
             )}
-            {/* <h5 className='result-desc'>{exercise.muscleGroup} | {exercise.equipment} | {exercise.exerciseType}</h5> */}
           </div>
           <div className='button-container'>
             {isEditing && (
               <button className='button-5' onClick={() => handleRemoveExercise(exercise.exercise_id)}>remove exercise</button>
               )}
-            {/* <button className='button-4' onClick={() => handleShowForm(exercise)}>Edit</button> */}
-            {/* <button className='button-5' onClick={() => handleDelete(exercise.id)}>Delete</button> */}
           </div>
         </div>
       ))}

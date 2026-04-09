@@ -20,17 +20,9 @@ export default function Workouts() {
 
   return (
     <>
-    {/* <dialog ref={dialogRef}>
-      <ExerciseForm
-        key={exerciseToEdit ? exerciseToEdit.id : "create"}
-        onExerciseAdded={handleCloseAndRefresh} 
-        exerciseToEdit={exerciseToEdit} 
-      />
-    </dialog> */}
     <div className='container-v'>
       <div className='container-h'>
         <h4>All Workouts</h4>
-        {/* <button className='button-3' onClick={() => handleShowForm(null)}>Create Exercise</button> */}
         <button className='button-3'>New Workout</button>
       </div>
       {workouts.map((workout) => (
@@ -42,9 +34,6 @@ export default function Workouts() {
             <h5 className='result-desc'>{workout.exercises.length} {workout.exercises.length == 1 ? "exercise" : "exercises"}</h5>
           </div>
           <div className='button-container'>
-            {/* <button className='button-4' onClick={() => handleEdit(exercise.id)}>Edit</button> */}
-            <button className='button-4'>Edit</button>
-            {/* <button className='button-4' onClick={() => handleShowForm(exercise)}>Edit</button>} */}
             <button className='button-5' onClick={() => handleDelete(workout.id)}>Delete</button>
           </div>
         </div>
