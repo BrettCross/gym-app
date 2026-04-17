@@ -1,5 +1,6 @@
 from beanie import Document, PydanticObjectId
-from datetime import datetime
+from pydantic import Field
+from datetime import datetime, timezone
 
 class Exercise(Document):
     userID: PydanticObjectId
@@ -7,7 +8,8 @@ class Exercise(Document):
     equipment: list[str]
     muscleGroup: list[str] # maybe split into primary and secondary
     exerciseType: str
-    createdAt: datetime = datetime.now()
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "exercises" # MongoDB colletion name
