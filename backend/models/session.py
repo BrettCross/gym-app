@@ -8,11 +8,13 @@ class SetProgress(BaseModel):
 
 class ExerciseProgress(BaseModel):
     exercise_id: PydanticObjectId
+    exercise_name: str
     sets: list[SetProgress]
 
 class Session(Document):
     user_id: PydanticObjectId
     workout_id: PydanticObjectId
+    workout_name: str
     date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     exercises: list[ExerciseProgress]
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
