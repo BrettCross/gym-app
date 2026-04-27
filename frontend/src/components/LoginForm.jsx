@@ -1,32 +1,37 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiService from '@utils/apiService';
+import { useAuth } from '../context/AuthContext';
 
 
-export default function LoginForm({ onLogin }) {
+// export default function LoginForm({ onLogin }) {
+export default function LoginForm() {
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const response = await apiService.post('/token', {
-      username: username,
-      password: password
-    }, {
-      headers: {
-        "Content-Type":"multipart/form-data"
-      },
-      withCredentials: true // Sends cookies/session
-    });
-
-    const token = response.data.access_token
     try {
-      console.log(token)
-      localStorage.setItem('jwtToken', token)
-      onLogin(true)
+      const response = await apiService.post('/token', {
+        username: username,
+        password: password
+      }, {
+        headers: {
+          "Content-Type":"multipart/form-data"
+        },
+        withCredentials: true // Sends cookies/session
+      });
+
+      const token = response.data.access_token
+
+      login(token);
+      // console.log(token)
+      // localStorage.setItem('jwtToken', token)
+      // onLogin(true)
     } catch (error) {
-      console.error(error.response.data)
+      console.error("Login failed:", error.response?.data || error.message);
     }
   };
   
