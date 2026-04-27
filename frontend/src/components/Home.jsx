@@ -1,3 +1,14 @@
+import RecentActivity from "./RecentActivity";
+
 export default function Home() {
-  return <h1>Home</h1>;
+  return (
+    <>
+      <div className="container-v">
+        <div className='container-h'>
+          <h4>All Sessions</h4>
+        </div>
+        <RecentActivity />
+      </div>
+    </>
+  );
 }

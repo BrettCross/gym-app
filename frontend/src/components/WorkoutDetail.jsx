@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import apiService from '@utils/apiService';
 
 export default function WorkoutDetail() {
-  const [isEditing, setIsEditing] = useState(false)
+  const location = useLocation();
+  const [isEditing, setIsEditing] = useState(location.state?.autoEdit || false);
   const [editedWorkout, setEditedWorkout] = useState(null)
   const [workout, setWorkout] = useState({
     id: "",
@@ -11,7 +12,7 @@ export default function WorkoutDetail() {
     name: "",
     exercises: []
   });
-  // const [isAddingExercise, setIsAddingExercise] = useState(false)
+  
   const [availableExercises, setAvailableExercises] = useState([])
   const [searchQuery, setSearchQuery] = useState('');
   const filteredExercises = availableExercises.filter(e => e.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -25,133 +26,142 @@ export default function WorkoutDetail() {
         const response = await apiService.get(`/workouts/${params.id}`);
         console.log(response)
         setWorkout(response.data);
+
+        if (isEditing) {
+          setEditedWorkout(response.data);
+        }
       };
       fetchData(params.id);
-    }, [params.id]);
+    }, [params.id, isEditing]);
 
-    const handleEditWorkout = () => {
-      setIsEditing(true);
-      setEditedWorkout({ ...workout, exercises: [...workout.exercises] });
+  const handleEditWorkout = () => {
+    setIsEditing(true);
+    setEditedWorkout({ ...workout, exercises: [...workout.exercises] });
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditedWorkout(null);
+  };
+
+  const handleSave = async () => {
+    const payload = {
+      ...editedWorkout,
+      exercises: editedWorkout.exercises.map((e, index) => ({
+        exercise_id: e.exercise_id,
+        order: index,
+        sets: e.sets
+      }))
     };
 
-    const handleCancel = () => {
+    try {
+      const response = await apiService.patch(`/workouts/${workout.id}`, payload);
+      // const detail = await apiService.get(`/workouts/${params.id}`);
+      setWorkout(response.data);
       setIsEditing(false);
       setEditedWorkout(null);
-    };
-
-    const handleSave = async () => {
-      const payload = {
-        ...editedWorkout,
-        exercises: editedWorkout.exercises.map((e, index) => ({
-          exercise_id: e.exercise_id,
-          order: index,
-          sets: e.sets
-        }))
-      };
-
-      try {
-        const response = await apiService.patch(`/workouts/${workout.id}`, payload);
-        // const detail = await apiService.get(`/workouts/${params.id}`);
-        setWorkout(response.data);
-        setIsEditing(false);
-        setEditedWorkout(null);
-      } catch (error) {
-        console.error(error.response?.data);
-      }
-    };
-
-    const handleAddExercise = async () => {
-      // setIsAddingExercise(true);
-      try {
-        const response = await apiService.get('/exercises');
-        const exercises = response.data;
-        const curExIDs = editedWorkout.exercises.map(e => e.exercise_id);
-        const filtered = exercises.filter(e => !curExIDs.includes(e.id));
-        setAvailableExercises(filtered);
-        addExerciseDialogRef.current.showModal();
-      } catch (error) {
-        console.error(error.response?.data);
-      }
-    };
-
-    const handleToggleExercise = (exercise) => {
-      if (selectedExercises.some(e => e.id === exercise.id)) {
-        setSelectedExercises(selectedExercises.filter(e => e.id !== exercise.id));
-      } else {
-        setSelectedExercises([...selectedExercises, exercise]);
-      }
-    };
-
-    const handleConfirmAddExercises = () => {
-      const newExercises = selectedExercises.map((e, index) => ({
-        exercise_id: e.id,
-        order: editedWorkout.exercises.length + index,
-        sets: [{ weight: 0, reps: 0 }],
-        name: e.name,
-        muscleGroup: e.muscleGroup,
-        equipment: e.equipment,
-        exerciseType: e.exerciseType
-      }));
-
-      setEditedWorkout({
-        ...editedWorkout,
-        exercises: [...editedWorkout.exercises, ...newExercises]
-      });
-      setSelectedExercises([])
-      addExerciseDialogRef.current.close();
+    } catch (error) {
+      console.error(error.response?.data);
     }
-    const handleRemoveExercise = (exerciseID) => {
-      console.log(`exerciseID: ${exerciseID}`)
-      setEditedWorkout({...editedWorkout, exercises: editedWorkout.exercises.filter(ex => ex.exercise_id !== exerciseID)});
-    };
+  };
 
-    const handleAddSet = (exerciseID) => {
-      setEditedWorkout({
-        ...editedWorkout,
-        exercises: editedWorkout.exercises.map(e => {
-          if (e.exercise_id === exerciseID) {
-            const lastSet = e.sets[e.sets.length - 1];
-            return {
-              ...e,
-              sets: [...e.sets, { weight: lastSet.weight, reps: lastSet.reps }]
-            };
-          }
-          return e;
-        })
-      });
-    };
+  const handleAddExercise = async () => {
+    // setIsAddingExercise(true);
+    try {
+      const response = await apiService.get('/exercises');
+      const exercises = response.data;
+      const curExIDs = editedWorkout.exercises.map(e => e.exercise_id);
+      const filtered = exercises.filter(e => !curExIDs.includes(e.id));
+      setAvailableExercises(filtered);
+      addExerciseDialogRef.current.showModal();
+    } catch (error) {
+      console.error(error.response?.data);
+    }
+  };
 
-    const handleUpdateSet = (exerciseID, setIndex, field, value) => {
-      setEditedWorkout({
-        ...editedWorkout,
-        exercises: editedWorkout.exercises.map(e => {
-          if (e.exercise_id === exerciseID) {
-            return {
-              ...e,
-              sets: e.sets.map((s, i) => 
-                i === setIndex ? { ...s, [field]: value } : s
-              )
-            };
-          }
-          return e;
-        })
-      });
-    };
+  const handleToggleExercise = (exercise) => {
+    if (selectedExercises.some(e => e.id === exercise.id)) {
+      setSelectedExercises(selectedExercises.filter(e => e.id !== exercise.id));
+    } else {
+      setSelectedExercises([...selectedExercises, exercise]);
+    }
+  };
 
-    const handleRemoveSet = (exerciseID, setIndex) => {
-      setEditedWorkout({
-        ...editedWorkout, 
-        exercises: editedWorkout.exercises.map(e => {
-          if (e.exercise_id === exerciseID) {
-            return {
-              ...e,
-              sets: e.sets.filter((_, i) => i !== setIndex)
-            };
-          }
-          return e;
-        })
-      });
-    };
+  const handleConfirmAddExercises = () => {
+    const newExercises = selectedExercises.map((e, index) => ({
+      exercise_id: e.id,
+      order: editedWorkout.exercises.length + index,
+      sets: [{ weight: 0, reps: 0 }],
+      name: e.name,
+      muscleGroup: e.muscleGroup,
+      equipment: e.equipment,
+      exerciseType: e.exerciseType
+    }));
+
+    setEditedWorkout({
+      ...editedWorkout,
+      exercises: [...editedWorkout.exercises, ...newExercises]
+    });
+    setSelectedExercises([])
+    addExerciseDialogRef.current.close();
+  }
+
+  const handleRemoveExercise = (exerciseID) => {
+    console.log(`exerciseID: ${exerciseID}`)
+    setEditedWorkout({...editedWorkout, exercises: editedWorkout.exercises.filter(ex => ex.exercise_id !== exerciseID)});
+  };
+
+  const handleAddSet = (exerciseID) => {
+    setEditedWorkout({
+      ...editedWorkout,
+      exercises: editedWorkout.exercises.map(e => {
+        if (e.exercise_id === exerciseID) {
+          const lastSet = e.sets[e.sets.length - 1];
+          return {
+            ...e,
+            sets: [...e.sets, { weight: lastSet.weight, reps: lastSet.reps }]
+          };
+        }
+        return e;
+      })
+    });
+  };
+
+  const handleUpdateSet = (exerciseID, setIndex, field, value) => {
+    setEditedWorkout({
+      ...editedWorkout,
+      exercises: editedWorkout.exercises.map(e => {
+        if (e.exercise_id === exerciseID) {
+          return {
+            ...e,
+            sets: e.sets.map((s, i) => 
+              i === setIndex ? { ...s, [field]: value } : s
+            )
+          };
+        }
+        return e;
+      })
+    });
+  };
+
+  const handleRemoveSet = (exerciseID, setIndex) => {
+    setEditedWorkout({
+      ...editedWorkout, 
+      exercises: editedWorkout.exercises.map(e => {
+        if (e.exercise_id === exerciseID) {
+          return {
+            ...e,
+            sets: e.sets.filter((_, i) => i !== setIndex)
+          };
+        }
+        return e;
+      })
+    });
+  };
+
+  if (isEditing && !editedWorkout) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <>
