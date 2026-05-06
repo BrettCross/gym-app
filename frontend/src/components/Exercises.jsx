@@ -6,13 +6,13 @@ function ExerciseForm({ onExerciseAdded, exerciseToEdit }) {
     exerciseToEdit ? {
       name: exerciseToEdit.name,
       equipment: exerciseToEdit.equipment.join(", "),
-      muscleGroup: exerciseToEdit.muscleGroup.join(", "),
-      exerciseType: exerciseToEdit.exerciseType,
+      muscle_group: exerciseToEdit.muscle_group.join(", "),
+      exercise_type: exerciseToEdit.exercise_type,
     } : {
       name: "",
       equipment: "",
-      muscleGroup: "",
-      exerciseType: "",
+      muscle_group: "",
+      exercise_type: "",
     }
   );
 
@@ -49,9 +49,9 @@ function ExerciseForm({ onExerciseAdded, exerciseToEdit }) {
     const cleanEquipList = equipList.map(item => item.trim());
     payload.equipment = cleanEquipList;
 
-    const muscleList = payload.muscleGroup.split(",");
+    const muscleList = payload.muscle_group.split(",");
     const cleanMuscleList = muscleList.map(item => item.trim());
-    payload.muscleGroup = cleanMuscleList;
+    payload.muscle_group = cleanMuscleList;
 
     // check if editing or creating
     if (exerciseToEdit != null) {
@@ -66,14 +66,14 @@ function ExerciseForm({ onExerciseAdded, exerciseToEdit }) {
     setExercise({
       name: "",
       equipment: "",
-      muscleGroup: "",
-      exerciseType: "",
+      muscle_group: "",
+      exercise_type: "",
     });
   };
 
   return (
     <form action="" onSubmit={handleSubmit}>
-      {["name", "equipment", "muscleGroup", "exerciseType"].map((field) => (
+      {["name", "equipment", "muscle_group", "exercise_type"].map((field) => (
         <div key={field}>
           <label htmlFor={field}>{field}</label>
           <input 
@@ -153,7 +153,7 @@ export default function Exercises() {
         <div key={exercise.id} className='result-container'>
           <div className='result'>
             <h3 className='result-title'>{exercise.name}</h3>
-            <h5 className='result-desc'>{exercise.muscleGroup} | {exercise.equipment} | {exercise.exerciseType}</h5>
+            <h5 className='result-desc'>{exercise.muscle_group} | {exercise.equipment} | {exercise.exercise_type}</h5>
           </div>
           <div className='button-container'>
             {/* <button className='button-4' onClick={() => handleEdit(exercise.id)}>Edit</button> */}

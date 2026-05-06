@@ -1,140 +1,143 @@
-from beanie import PydanticObjectId
 from datetime import datetime
-from fastapi import Depends, APIRouter, HTTPException, status
 from typing import Annotated
+
+from beanie import PydanticObjectId
+from fastapi import Depends, APIRouter, HTTPException, status
 
 from backend.models.exercise import Exercise
 from backend.models.user import User
 from backend.schemas.exercise import ExerciseCreate, ExerciseRead, ExerciseUpdate
-from backend.database import get_database
 from backend.utils import auth
 
 
-router = APIRouter(tags=["exercises"])
+router = APIRouter()
 
 # Create Exercise
-@router.post("/exercises", response_model=ExerciseRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ExerciseRead, status_code=status.HTTP_201_CREATED)
 async def create_exercise(
-    exercise: ExerciseCreate,
-    current_user: Annotated[User, Depends(auth.get_current_active_user)]):
-    # check if exercise exists for user
-    exercise_exists = await Exercise.find_one(Exercise.userID == PydanticObjectId(current_user.id)).find_one(Exercise.name == exercise.name)
-    
-    if exercise_exists:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Exercise already registered")
-    
-    # create/save exercise to Mongo
-    exer_doc = Exercise(
-        userID=current_user.id,
-        name=exercise.name,
-        equipment=exercise.equipment,
-        muscleGroup=exercise.muscleGroup,
-        exerciseType=exercise.exerciseType,
-        createdAt=exercise.createdAt or datetime.now()
+    current_user: Annotated[User, Depends(auth.get_current_active_user)],
+    exercise: ExerciseCreate
+):
+    """
+    Create a new exercise template for the authenticated user.
+    Checks for duplicates names to prevent redundant templates.
+    """
+    exercise_exists = await Exercise.find_one(
+        Exercise.user_id == PydanticObjectId(current_user.id),
+        Exercise.name == exercise.name
     )
-    await exer_doc.insert()
 
-    # return clean response
-    return ExerciseRead(
-        id=str(exer_doc.id),
-        userID=str(exer_doc.userID),
-        name=exer_doc.name,
-        equipment=exer_doc.equipment,
-        muscleGroup=exer_doc.muscleGroup,
-        exerciseType=exer_doc.exerciseType,
-        createdAt=exer_doc.createdAt
+    if exercise_exists:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, 
+            detail="You already have an exercise with this name."
+        )
+    
+    new_exercise = Exercise(
+        **exercise.model_dump(),
+        user_id=current_user.id
     )
+    
+    await new_exercise.insert()
+    return new_exercise
+
 
 # Read exercises with optional filters
-@router.get("/exercises", response_model=list[ExerciseRead], status_code=status.HTTP_200_OK)
+@router.get("", response_model=list[ExerciseRead], status_code=status.HTTP_200_OK)
 async def list_exercises(
     current_user: Annotated[User, Depends(auth.get_current_active_user)],
     name: str | None = None, 
     equipment: str | None = None, 
-    muscleGroup: str | None = None):
-
-    query = {}
+    muscle_group: str | None = None
+):
+    """
+    List all exercises for the current user with optional filtering
+    """
+    query = Exercise.find(Exercise.user_id == current_user.id)
     if name:
-        query["name"] = {"$regex": name, "$options": "i"}
+        query = query.find(Exercise.name == {"$regex": name, "$options": "i"})
     if equipment:
-        query["equipment"] = {"$regex": equipment, "$options": "i"}
-    if muscleGroup:
-        query["muscleGroup"] = {"$regex": muscleGroup, "$options": "i"}
+        query = query.find(Exercise.equipment == {"$regex": equipment, "$options": "i"})
+    if muscle_group:
+        query = query.find(Exercise.muscle_group == {"$regex": muscle_group, "$options": "i"})
+    exercises = await query.to_list()
+    return exercises
 
-    exercises = await Exercise.find(Exercise.userID == PydanticObjectId(current_user.id)).find(query).to_list()
-
-    if len(exercises) == 0:
-        # raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercises not found")
-        return []
-    
-    return [
-        ExerciseRead(
-            id=str(exercise.id),
-            userID=str(exercise.userID),
-            name=exercise.name,
-            equipment=exercise.equipment,
-            muscleGroup=exercise.muscleGroup,
-            exerciseType=exercise.exerciseType,
-            createdAt=exercise.createdAt
-        )
-        for exercise in exercises
-    ]
 
 # Read Exercise with ID - backend use
-@router.get("/exercises/{exercise_id}", response_model=ExerciseRead, status_code=status.HTTP_200_OK)
+@router.get("/{exercise_id}", response_model=ExerciseRead, status_code=status.HTTP_200_OK)
 async def read_exercise(
-    exercise_id: PydanticObjectId,
-    current_user: Annotated[User, Depends(auth.get_current_active_user)]):
-    exercise = await Exercise.get(exercise_id)
-
+    current_user: Annotated[User, Depends(auth.get_current_active_user)],
+    exercise_id: PydanticObjectId
+):
+    """
+    Fetch a single exercise by its unique ID for the authenticated user.
+    """
+    exercise = await Exercise.find_one(
+        Exercise.user_id == current_user.id,
+        Exercise.id == exercise_id
+    )
+    
     if not exercise:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
-    
-    return ExerciseRead(
-        id=str(exercise.id),
-        userID=current_user.id,
-        name=exercise.name,
-        equipment=exercise.equipment,
-        muscleGroup=exercise.muscleGroup,
-        exerciseType=exercise.exerciseType,
-        createdAt=exercise.createdAt
-    )
+    return exercise
+
 
 # Update Exercise
-@router.put("/exercises/{exercise_id}", response_model=ExerciseRead, status_code=status.HTTP_200_OK)
+@router.put("/{exercise_id}", response_model=ExerciseRead, status_code=status.HTTP_200_OK)
 async def update_exercise(
-    exercise_id: PydanticObjectId, 
-    exercise_update: ExerciseUpdate,
-    current_user: Annotated[User, Depends(auth.get_current_active_user)]):
+    current_user: Annotated[User, Depends(auth.get_current_active_user)],
+    exercise_id: PydanticObjectId,
+    exercise_update: ExerciseUpdate
+):
+    """
+    Performs a partial update on an existing exercise template.
 
-    exercise = await Exercise.get(exercise_id)
+    - **exercise_id**: The unique MongoDB ID of the exercise.
+    - **exercise_update**: A JSON object containing only the fields you wish to change.
+    
+    Returns a **404** if the exercise is unavailable.
+    """
+
+    exercise = await Exercise.find_one(
+        Exercise.user_id == current_user.id,
+        Exercise.id == exercise_id
+    )
+
     if not exercise:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Exercise not found"
+    )
 
     update_data = exercise_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(exercise, field, value)
-
     await exercise.save()
+    return exercise
 
-    return ExerciseRead(
-        id=str(exercise.id),
-        userID=current_user.id,
-        name=exercise.name,
-        equipment=exercise.equipment,
-        muscleGroup=exercise.muscleGroup,
-        exerciseType=exercise.exerciseType,
-        createdAt=exercise.createdAt
-    )
 
 # Delete Exercise
-@router.delete("/exercises/{exercise_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{exercise_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_exercise(
-    exercise_id: PydanticObjectId,
-    _: Annotated[User, Depends(auth.get_current_active_user)]):
-    exercise = await Exercise.get(exercise_id)
+    current_user: Annotated[User, Depends(auth.get_current_active_user)],
+    exercise_id: PydanticObjectId
+):
+    """
+    Deletes the exercise for the authenticated user.
+
+    Returns a **404** if the exercise is unavailable.
+    """
+    exercise = await Exercise.find_one(
+        Exercise.id == exercise_id,
+        Exercise.user_id == current_user.id
+    )
+
     if not exercise:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Exercise not found"
+        )
     
     await exercise.delete()
     return None
