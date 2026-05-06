@@ -12,13 +12,13 @@ export default function ActiveSession() {
   
   const navigate = useNavigate();
   let params = useParams();
-  const workoutID = params.workoutID;
+  const sessionID = params.sessionID;
   
   
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await apiService.get(`/workouts/${workoutID}`)
+      const response = await apiService.get(`/sessions/${sessionID}`)
       
       const decoratedExercises = response.data.exercises.map((exercise) => ({
         ...exercise,
@@ -34,7 +34,7 @@ export default function ActiveSession() {
       });
     };
     fetchData();
-  }, [workoutID]);
+  }, [sessionID]);
 
   const toggleSetCompletion = (exerciseID, setIndex) => {
     setActiveSession(prev => ({
@@ -126,10 +126,16 @@ export default function ActiveSession() {
       }));
     };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
     const isConfirmed = window.confirm("Are you sure? This will discard all progress of the current session.");
     if (isConfirmed) {
-      navigate("/workouts");
+      try {
+        await apiService.delete(`/sessions/${sessionID}`);
+        navigate("/workouts");
+      } catch (error) {
+        console.error("Error deleting session:", error.response?.data);
+        navigate("/workouts");
+      }
     }
   };
 
@@ -151,14 +157,15 @@ export default function ActiveSession() {
     }
 
     const payload = {
-      workout_id: workoutID,
-      workout_name: activeSession.name,
+      // workout_name: activeSession.workout_name,
       exercises: filteredExercises,
-      date: new Date().toISOString()
+      end_time: new Date().toISOString()
     };
+    console.log("PAYLOAD");
+    console.log(payload);
 
     try {
-      await apiService.post('/sessions', payload);
+      await apiService.patch(`/sessions/${activeSession.id}`, payload);
       navigate('/workouts');
     } catch (error) {
       console.error("Failed to save session", error)
@@ -210,7 +217,7 @@ export default function ActiveSession() {
     </dialog>
     <div className='container-h'>
       <div className='result'>
-        <h3 className='result-title'>{activeSession.name}</h3>
+        <h3 className='result-title'>{activeSession.workout_name}</h3>
       </div>
       <div className='button-container'>
             <button className='button-4' onClick={handleCancel}>Cancel</button>
@@ -220,7 +227,7 @@ export default function ActiveSession() {
     {activeSession.exercises.map((exercise) => (
       <div key={exercise.exercise_id}>
         <div className="container-h">
-          <h4>{exercise.name}</h4>
+          <h4>{exercise.exercise_name}</h4>
           <button className='button-5' onClick={() => handleDeleteExercise(exercise.exercise_id)}>Delete</button>
         </div>
         {exercise.sets.map((set, setIdx) => (

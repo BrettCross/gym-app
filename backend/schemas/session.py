@@ -1,42 +1,74 @@
-from beanie import PydanticObjectId
-from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
+from beanie import PydanticObjectId
+from pydantic import BaseModel, ConfigDict, Field
 
-class SetProgressBase(BaseModel):
-    reps: int
-    weight: float | None = None
 
-class ExerciseProgressCreate(BaseModel):
-    exercise_id: str
-    sets: list[SetProgressBase]
+# --- Shared Sub-Schemas ---
 
-class ExerciseProgressRead(BaseModel):
-    exercise_id: str
-    exercise_name: str
-    sets: list[SetProgressBase]    
+class SessionSetBase(BaseModel):
+    """The performance data for a single set."""
+    weight: float = Field(default=None, description="Weight used")
+    reps: int = Field(..., description="Reps completed")
 
-class SessionCreate(BaseModel):
-    # user_id: str
-    workout_id: str | None = None
-    date: datetime | None = None
-    exercises: list[ExerciseProgressCreate]
 
-class SessionRead(BaseModel):
-    id: str
-    user_id: str
-    workout_id: str | None = None
-    workout_name: str
-    date: datetime
-    exercises: list[ExerciseProgressRead]
+class SessionExerciseBase(BaseModel):
+    """Shared fields for exercises within a session."""
+    exercise_id: PydanticObjectId
+    sets: list[SessionSetBase] = Field(default_factory=list)
 
-    model_config = ConfigDict(
-        json_encoders = {
-            PydanticObjectId: str
-        }
+
+class SessionExerciseRead(SessionExerciseBase):
+    """Enriched exercise data including historical snapshot names."""
+    exercise_name: str = Field(
+        ..., 
+        description="Snapshot name of exercise performed"
     )
 
-    # class Config:
-    #     json_encoders = {
-    #         PydanticObjectId: str   # serialize PydanticObjectId -> str
-    #     }
+
+# --- Main Schemas --- 
+
+class SessionBase(BaseModel):
+    """Core data for a workout session."""
+    workout_id: PydanticObjectId | None = None
+    workout_name: str = Field(
+        ...,
+        description="name of the routine performed"
+    )
+
+class SessionCreate(SessionBase):
+    """
+    Schema for srtarting/saving a session.
+    Note: Metadata like 'exercise_name' is usually handled by 
+    the backend during the snapshot process.
+    """
+
+    start_time: datetime | None = None
+    exercises: list[SessionExerciseBase] = Field(default_factory=list)
+
+
+class SessionRead(SessionBase):
+    """
+    The full session representation for the history UI.
+    """
+
+    id: PydanticObjectId
+    user_id: PydanticObjectId = Field(
+        ..., 
+        description="the unique ID of the user who performed the session"
+    )
+
+    start_time: datetime
+    end_time: datetime | None = None
+    exercises: list[SessionExerciseRead] = Field(default_factory=list)
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True
+    )
+
+class SessionUpdate(BaseModel):
+    """Used for updating an active or finished session. All fields are optional."""
+    workout_name: str | None = None
+    exercises: list[SessionExerciseBase] | None = None
+    end_time: datetime | None = None

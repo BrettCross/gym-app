@@ -6,7 +6,7 @@ export default function SessionCard({ session, showDelete, onDelete }) {
       return total + exVol;
     }, 0);
 
-    const formattedDate = new Date(session.date).toLocaleDateString(undefined, {
+    const formattedDate = new Date(session.start_time).toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
