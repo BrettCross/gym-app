@@ -1,9 +1,39 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class Token(BaseModel):
-    access_token: str
-    token_type: str
+    """
+    Schema for the successful authentication response.
+    Follows the OAuth2 standard format.
+    """
+    access_token: str = Field(
+        ...,
+        description="The JWT access token"
+    )
+
+    token_type: str = Field(
+        default="bearer",
+        description="The type of token (usually 'bearer')"
+
+    )
 
 
 class TokenData(BaseModel):
-    username: str | None = None
+    """
+    Represents the data payload stored within the JWT 'sub' claim.
+    """
+
+    username: str | None = Field(
+        default=None,
+        description="The username of the authenticated user"
+    )
+
+
+class TokenRefreshRequest(BaseModel):
+    """
+    Schema for refreshing an expired access token.
+    """
+
+    refresh_token: str = Field(
+        ...,
+        description="The persistent refresh token"
+    )

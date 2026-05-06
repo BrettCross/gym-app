@@ -1,24 +1,60 @@
-from pydantic import BaseModel, EmailStr
+from beanie import PydanticObjectId
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 
-class UserCreate(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
-    full_name: str | None = None
+class UserBase(BaseModel):
+    """
+    Base schema for User data shared across requests and responses.
+    """
 
-class UserRead(BaseModel):
-    id: str
-    username: str
-    email: EmailStr
-    full_name: str | None = None
+    username: str = Field(
+        ...,
+        description="Unique login identifier.",
+        min_length=3,
+        max_length=50
+    )
 
-# class User(BaseModel):
-#     username: str
-#     email: str | None = None
-#     full_name: str | None = None
-#     disabled: bool | None = None
+    email: EmailStr = Field(
+        ...,
+        description="User's verified email address.",
+    )
+
+    full_name: str | None = Field(
+        default=None,
+        description="Optional display name."
+    )
 
 
-class UserInDB(UserRead):
-    hashed_password: str
+class UserCreate(UserBase):
+    """
+    Schema for new user registration.
+    """
+
+    password: str = Field(
+        ...,
+        description="Plain text password (hashed before storage)."
+    )
+
+
+class UserRead(UserBase):
+    """
+    Schema for returning User data to frontend.
+    """
+
+    id: PydanticObjectId = Field(
+        description="Unique database identifier"
+    )
+    
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True
+    )
+
+
+class UserUpdate(UserBase):
+    """
+    Schema for updating User data. All fields are optional
+    """
+
+    email: EmailStr | None
+    full_name: str | None

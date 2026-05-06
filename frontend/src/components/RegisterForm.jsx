@@ -18,13 +18,12 @@ export default function RegisterForm({ onLogin }) {
     e.preventDefault();
     const fullName = `${user.firstName} ${user.lastName}`;
     
-    const response = await apiService.post('/users', {
+    const response = await apiService.post('/register', {
       email: user.email,
       username: user.username,
       password: user.password,
       full_name: fullName
     });
-    console.log(response);
     
     if (response.status == 201) {
       const tokenResponse = await apiService.post('/token', {
