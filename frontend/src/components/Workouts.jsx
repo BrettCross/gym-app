@@ -16,7 +16,7 @@ export default function Workouts() {
   }, []);
 
   const handleNewWorkout = async () => {
-    const uniqueName = `New Workout ${new Date().toLocaleDateString()}`;
+    const uniqueName = `New Workout ${new Date().toJSON()}`;
     const response = await apiService.post('/workouts', {
       name: uniqueName,
       exercises: []
@@ -29,8 +29,19 @@ export default function Workouts() {
     setWorkouts(workouts.filter(ex => ex.id !== workoutID));
   };
 
-  const handleStartSession = (workoutID) => {
-    navigate(`/session/${workoutID}`);
+  const handleStartSession = async (workoutID, workoutName) => {
+    try {
+      const response = await apiService.post("/sessions", {
+        workout_id: workoutID,
+        workout_name: workoutName
+      });
+      const newSession = response.data;
+
+      navigate(`/session/${newSession.id}`);
+
+    } catch (error) {
+      console.error("Failed to start session:", error.response?.data);
+    }
   };
 
   return (
@@ -47,7 +58,7 @@ export default function Workouts() {
               <h3 className='result-title'>{workout.name}</h3>
             </Link>
             <h5 className='result-desc'>{workout.exercises.length} {workout.exercises.length == 1 ? "exercise" : "exercises"}</h5>
-            <button className='button' onClick={() => handleStartSession(workout.id)}>Start Session</button>
+            <button className='button' onClick={() => handleStartSession(workout.id, workout.name)}>Start Session</button>
           </div>
           <div className='button-container'>
             <button className='button-5' onClick={() => handleDelete(workout.id)}>Delete</button>

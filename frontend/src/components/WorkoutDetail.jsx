@@ -23,16 +23,19 @@ export default function WorkoutDetail() {
 
   useEffect(() => {
       const fetchData = async () => {
-        const response = await apiService.get(`/workouts/${params.id}`);
-        console.log(response)
-        setWorkout(response.data);
+        try {
+          const response = await apiService.get(`/workouts/${params.id}`);
+          setWorkout(response.data);
 
-        if (isEditing) {
-          setEditedWorkout(response.data);
+          if (location.state?.autoEdit) {
+            setEditedWorkout(response.data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch workout", error);
         }
       };
-      fetchData(params.id);
-    }, [params.id, isEditing]);
+      fetchData();
+    }, [params.id, location.state?.autoEdit]);
 
   const handleEditWorkout = () => {
     setIsEditing(true);
@@ -55,9 +58,14 @@ export default function WorkoutDetail() {
     };
 
     try {
-      const response = await apiService.patch(`/workouts/${workout.id}`, payload);
+      console.log(`workout ID: ${params.id}`) // this is undefined
+      const response = await apiService.patch(`/workouts/${params.id}`, payload);
       // const detail = await apiService.get(`/workouts/${params.id}`);
       setWorkout(response.data);
+      console.log(response.data)
+      console.log(workout)
+      console.log(editedWorkout)
+      console.log(payload)
       setIsEditing(false);
       setEditedWorkout(null);
     } catch (error) {
@@ -93,9 +101,9 @@ export default function WorkoutDetail() {
       order: editedWorkout.exercises.length + index,
       sets: [{ weight: 0, reps: 0 }],
       name: e.name,
-      muscleGroup: e.muscleGroup,
+      muscle_group: e.muscle_group,
       equipment: e.equipment,
-      exerciseType: e.exerciseType
+      exercise_type: e.exercise_type
     }));
 
     setEditedWorkout({
@@ -165,6 +173,7 @@ export default function WorkoutDetail() {
 
   return (
     <>
+    {isEditing ? console.log(`Edit Name: ${editedWorkout.name}`): console.log(`Workout Name: ${workout.name}`)}
     <dialog ref={addExerciseDialogRef}>
       <input
         type="text"
@@ -174,7 +183,7 @@ export default function WorkoutDetail() {
       />
       {filteredExercises.map((exercise) => (
         <div key={exercise.id} onClick={() => handleToggleExercise(exercise)}>
-        {exercise.name}
+        {exercise.name} | ID: {exercise.id} | _ID: {exercise._id}
         </div>
       ))}
       <button className='button-3' onClick={() => handleConfirmAddExercises()}>Add</button>

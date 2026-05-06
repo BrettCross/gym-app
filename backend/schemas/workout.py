@@ -1,57 +1,115 @@
-from pydantic import BaseModel, ConfigDict
+from datetime import datetime
+
 from beanie import PydanticObjectId
+from pydantic import BaseModel, ConfigDict, Field
 
 
+# --- Shared Sub-Schemas ---
 class SetSchema(BaseModel):
-    weight: float
-    reps: int
+    """Used to populate set data for Exercises"""
+    weight: float = Field(..., description="Weight used in the set (lbs/kg).")
+    reps: int = Field(..., description="Number of repetitions.", gt=-1)
 
-class WorkoutExerciseSchema(BaseModel):
-    exercise_id: PydanticObjectId
-    order: int
-    sets: list[SetSchema] = []
 
-class WorkoutExerciseDetail(BaseModel):
-    exercise_id: PydanticObjectId
-    order: int
-    name: str
-    equipment: list[str]
-    muscleGroup: list[str]
-    exerciseType: str
-    sets: list[SetSchema] = []
+class WorkoutExerciseBase(BaseModel):
+    """
+    Core structure of an exercise within a workout.
+    
+    Used for input (Create/Update). Contains just the IDs.
+    """
 
-class WorkoutCreate(BaseModel):
-    name: str
-    exercises: list[WorkoutExerciseSchema] = []
-
-class WorkoutDetailRead(BaseModel):
-    id: str
-    user_id: str
-    name: str
-    exercises: list[WorkoutExerciseDetail] = []
-
-    model_config = ConfigDict(
-        json_encoders = {
-            PydanticObjectId: str
-        }
+    exercise_id: PydanticObjectId = Field(
+        ..., 
+        description="Reference to the exercise template"
     )
 
-class WorkoutRead(BaseModel):
-    id: str
-    user_id: str
-    name: str
-    exercises: list[WorkoutExerciseSchema] = []
+    order: int = Field(
+        ..., 
+        description="The sequence position of the exercise"
+    )
+
+    sets: list[SetSchema] = Field(
+        default_factory=list, 
+        description="List of sets to be performed."
+    )
+
+
+class WorkoutExerciseDetail(WorkoutExerciseBase):
+    """Adds Exercise metadata for detailed view."""
+    name: str = Field(
+        ..., 
+    description="The display name of the exercise",
+    examples=["Barbell Bench Press"]
+    )
+
+    equipment: list[str] = Field(
+        default_factory=list,
+        description="List of equipment needed."
+    )
+
+    muscle_group: list[str] = Field(
+        default_factory=list,
+        description="List of targeted muscles. Index 0 is primary."
+    )
+
+    exercise_type: str = Field(
+        ...,
+        description="tracking method of exercise.",
+        examples=["weight&reps", "cardio"]
+    )
+    
+
+# --- Main Schemas ---
+class WorkoutBase(BaseModel):
+    """Base fields for all workout schemas."""
+    name: str = Field(
+        ...,
+        description="The display name of the workout.",
+        examples=["Push Day", "Pull Day"]
+    )
+
+
+class WorkoutCreate(WorkoutBase):
+    """Schema for incoming creation requests"""
+    exercises: list[WorkoutExerciseBase] = Field(
+        default_factory=list,
+        description="List of exercises to be performed."
+    )
+
+
+class WorkoutReadBase(WorkoutBase):
+    """System fields for all outgoing responses."""
+    id: PydanticObjectId = Field(
+        description="The unique ID for this workout template."
+    )
+
+    user_id: PydanticObjectId = Field(
+        description="The ID of the user who owns this workout template."
+    )
 
     model_config = ConfigDict(
-        json_encoders = {
-            PydanticObjectId: str
-        }
+        from_attributes=True,
+        populate_by_name=True
     )
-    # class Config:
-    #     json_encoders = {
-    #         PydanticObjectId: str   # serialize PydanticObjectId -> str
-    #     }
 
-class WorkoutUpdate(BaseModel):
+
+class WorkoutRead(WorkoutReadBase):
+    """Lightweight view for lists."""
+    exercises: list[WorkoutExerciseBase] = Field(
+        default_factory=list,
+        description="List of exercises to be performed."
+    )
+
+
+class WorkoutDetailRead(WorkoutReadBase):
+    """Enriched view for workout dashboard"""
+    exercises: list[WorkoutExerciseDetail] = Field(
+        default_factory=list,
+        description="List of exercises to be performed"
+    )
+
+
+class WorkoutUpdate(WorkoutBase):
+    """Schema for partial updates. All fields are optional."""
     name: str | None = None
-    exercises: list[WorkoutExerciseSchema] | None = None
+    exercises: list[WorkoutExerciseBase] | None = None
