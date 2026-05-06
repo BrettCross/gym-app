@@ -1,49 +1,45 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-# Assuming db/mongo.py now contains the refactored init_db(uri)
-from backend.database import init_db 
+from dotenv import load_dotenv
+load_dotenv()
+
 import os 
-from motor.motor_asyncio import AsyncIOMotorClient
+from contextlib import asynccontextmanager
 
-from backend.routes import exercises, ping, users, workouts, sessions
+from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 
-# Global variable to hold the client instance returned by init_db
-global_client: AsyncIOMotorClient | None = None
+from backend.database import init_db 
+from backend.routes.router import api_router
+
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1. STARTUP
-    global global_client
-    
-    # --- CHECK FOR TESTING ENVIRONMENT HERE ---
-    if os.getenv("TESTING") != "1": 
-        # Only run production setup if we are NOT testing
-        print("Starting Application (Production/Dev Mode)...")
-        mongo_uri = os.getenv("MONGO_URI")
-        
-        try:
-            global_client = await init_db(uri=mongo_uri)
-        except Exception as e:
-            print(f"FATAL ERROR during MongoDB startup: {e}")
-            raise e
-    else:
-        # Running in test mode - skip production DB init
-        print("Running in Test Mode. Skipping production DB initialization.")
-    
-    # Yield control to the application to handle requests
+    """
+    Handles application startup and shutdown events.
+    """
+    # Initialize MongoDB and Beanie
+    mongo_uri = os.getenv("MONGO_URI")
+    if not mongo_uri:
+        raise ValueError("MONGO_URI environment variable is not set!")
+
+    # init_db handles connection and Beanie initialization
+    await init_db(uri=mongo_uri)
+    print("Successfully connected to MongoDB and initialized Beanie")
+
     yield
-    
-    # SHUTDOWN
-    # Only close the client if we actually opened it (i.e., not in test mode)
-    if os.getenv("TESTING") != "1" and global_client:
-        global_client.close()
-        print("MongoDB Client connection closed.")
+
+    print("Application shutdown complete")
 
 
-app = FastAPI(lifespan=lifespan)
+# --- App Configuration ---
+app = FastAPI(
+    title="Gym Tracker API",
+    version="1.0.0",
+    lifespan=lifespan
+)
 
-# Add CORS middleware
+# CORS middleware - use env variables for production
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],  
@@ -52,12 +48,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(ping.router)
-app.include_router(exercises.router)
-app.include_router(users.router)
-app.include_router(workouts.router)
-app.include_router(sessions.router)
+# --- Routes ---
 
-@app.get("/")
-async def root():
-    return {"status": "Service is running!"}
+app.include_router(api_router, prefix="/api")
+
+@app.get("/", include_in_schema=False)
+async def root_redirect():
+    """Redirects the base URL to the swagger documentation."""
+    return RedirectResponse(url="/docs")
+
+
+@app.get("/healthz", include_in_schema=False)
+async def health_check():
+    """System health check for infrastructure monitoring."""
+    return {"status": "healthy"}
