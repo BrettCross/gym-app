@@ -1,61 +1,93 @@
+/**
+ * ActiveSession.jsx
+ * 
+ * Manages an ongoing workout session. 
+ * Includes logic for tracking sets, adding/removing exercises.
+ * 
+ * Features:
+ * - Track completed sets/exercises
+ * - add/remove exercises
+ * - add/remove sets
+ * - Exercise selection via searchable modal
+ */
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import apiService from "../utils/apiService";
 
 export default function ActiveSession() {
+  // Data State
   const [activeSession, setActiveSession] = useState(null);
   const [availableExercises, setAvailableExercises] = useState([])
   const [searchQuery, setSearchQuery] = useState('');
-  const filteredExercises = availableExercises.filter(e => e.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  const addExerciseDialogRef = useRef(null);
   const [selectedExercises, setSelectedExercises] = useState([]);
   
-  const navigate = useNavigate();
-  let params = useParams();
-  const sessionID = params.sessionID;
-  
-  
+  // UI State
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeAction, setActiveAction] = useState({ id: null, type: null });
+  const [error, setError] = useState(null);
 
+  const addExerciseDialogRef = useRef(null);
+  const navigate = useNavigate();
+  const { sessionID } = useParams();
+  
+  // Filter logic for exercise selection modal
+  const filteredExercises = availableExercises.filter(e => 
+    e.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  /**
+   * Effect: Initial data fetch for the session.
+   */
   useEffect(() => {
     const fetchData = async () => {
-      const response = await apiService.get(`/sessions/${sessionID}`)
-      
-      const decoratedExercises = response.data.exercises.map((exercise) => ({
-        ...exercise,
-        sets: exercise.sets.map((set) => ({
-          ...set,
-          completed: false
-        }))
-      }));
+      setError(null);
 
-      setActiveSession({
-        ...response.data,
-        exercises: decoratedExercises
-      });
+      try {
+        setIsLoading(true);
+        const response = await apiService.get(`/sessions/${sessionID}`)
+      
+        const decoratedExercises = response.data.exercises.map((exercise) => ({
+          ...exercise,
+          sets: exercise.sets.map((set) => ({
+            ...set,
+            completed: false
+          }))
+        }));
+
+        setActiveSession({
+          ...response.data,
+          exercises: decoratedExercises
+        });
+      } catch (err) {
+        const message = err.response?.data?.detail || "Failed to fetch session";
+        setError(message);
+      } finally {
+        setIsLoading(false);
+      }
     };
     fetchData();
   }, [sessionID]);
+
+  // --- Set Management ---
 
   const toggleSetCompletion = (exerciseID, setIndex) => {
     setActiveSession(prev => ({
       ...prev,
       exercises: prev.exercises.map(ex => {
         if (ex.exercise_id !== exerciseID) return ex;
-        
         const updatedSets = ex.sets.map((set, i) => {
           if (i !== setIndex) return set;
           return { ...set, completed: !set.completed };
         });
-
         return { ...ex, sets: updatedSets };
       })
     }));
   };
 
   const handleAddSet = (exerciseID) => {
-    setActiveSession({
-      ...activeSession,
-      exercises: activeSession.exercises.map(e => {
+    setActiveSession(prev => ({
+      ...prev,
+      exercises: prev.exercises.map(e => {
         if (e.exercise_id === exerciseID) {
           const lastSet = e.sets[e.sets.length - 1];
           return {
@@ -69,7 +101,7 @@ export default function ActiveSession() {
         }
         return e;
       })
-    });
+    }));
   };
 
   const handleUpdateSet = (exerciseID, setIndex, field, value) => {
@@ -104,42 +136,53 @@ export default function ActiveSession() {
     }));
   };
 
-  const handleAddExercise = async () => {
-    // setIsAddingExercise(true);
+  // --- Exercise Management ---
+
+  const handleAddExerciseRequest = async () => {
+    setError(null);
+    setActiveAction({ id: null, type: "add" })
+
     try {
       const response = await apiService.get('/exercises');
-      const exercises = response.data;
       const curExIDs = activeSession.exercises.map(e => e.exercise_id);
-      const filtered = exercises.filter(e => !curExIDs.includes(e.id));
+      const filtered = response.data.filter(e => !curExIDs.includes(e.id));
       setAvailableExercises(filtered);
       addExerciseDialogRef.current.showModal();
-    } catch (error) {
-      console.error(error.response?.data);
+    } catch (err) {
+      const message = err.response?.data?.detail || "Failed to add exercise";
+      setError(message);
+    } finally {
+      setActiveAction({ id: null, type: null })
     }
   };
 
   const handleDeleteExercise = (exerciseID) => {
-      console.log(`exerciseID: ${exerciseID}`)
+      setActiveAction({ id: exerciseID, type: "delete" })
       setActiveSession(prev => ({
         ...prev, 
         exercises: prev.exercises.filter(ex => ex.exercise_id !== exerciseID)
       }));
+      setActiveAction({ id: null, type: null })
     };
 
   const handleCancel = async () => {
     const isConfirmed = window.confirm("Are you sure? This will discard all progress of the current session.");
     if (isConfirmed) {
       try {
+        setActiveAction({ id: null, type: "cancel" })
         await apiService.delete(`/sessions/${sessionID}`);
         navigate("/workouts");
       } catch (error) {
         console.error("Error deleting session:", error.response?.data);
         navigate("/workouts");
+      } finally {
+        setActiveAction({ id: null, type: null })
       }
     }
   };
 
   const handleFinish = async () => {
+    // collect only the completed sets
     const filteredExercises = activeSession.exercises
     .map(ex => ({
       exercise_id: ex.exercise_id,
@@ -156,19 +199,20 @@ export default function ActiveSession() {
       return;
     }
 
-    const payload = {
-      // workout_name: activeSession.workout_name,
-      exercises: filteredExercises,
-      end_time: new Date().toISOString()
-    };
-    console.log("PAYLOAD");
-    console.log(payload);
-
     try {
+      setError(null);
+      setActiveAction({ id: null, type: "finish" });
+      const payload = {
+        exercises: filteredExercises,
+        end_time: new Date().toISOString()
+      };
       await apiService.patch(`/sessions/${activeSession.id}`, payload);
       navigate('/workouts');
-    } catch (error) {
-      console.error("Failed to save session", error)
+    } catch (err) {
+      const message = err.response?.data?.detail || "Failed to log session. Please try again.";
+      setError(message);
+    } finally {
+      setActiveAction({ id: null, type: null });
     }
   };
 
@@ -197,10 +241,12 @@ export default function ActiveSession() {
     addExerciseDialogRef.current.close();
   }
 
-  if (!activeSession) return <div>Loading your workout...</div>;
+  if (isLoading) return <div>Loading your workout...</div>;
 
   return (
     <>
+    {error && <div style={{ color: 'red', fontWeight: 'bold' }}>{error}</div>}
+
     <dialog ref={addExerciseDialogRef}>
       <input
         type="text"
@@ -220,15 +266,33 @@ export default function ActiveSession() {
         <h3 className='result-title'>{activeSession.workout_name}</h3>
       </div>
       <div className='button-container'>
-            <button className='button-4' onClick={handleCancel}>Cancel</button>
-            <button className='button-3' onClick={handleFinish}>Finish</button>
-          </div>
+        <button 
+          className='button-4'
+          disabled={activeAction.type === "cancel"}
+          onClick={handleCancel}
+        >
+          Cancel
+        </button>
+        <button 
+        className='button-3' 
+        disabled={activeAction.type === "finish"}
+        onClick={handleFinish}
+        >
+          {activeAction.type === "finish" ? "Saving..." : "Finish"}
+        </button>
+      </div>
     </div>
     {activeSession.exercises.map((exercise) => (
       <div key={exercise.exercise_id}>
         <div className="container-h">
           <h4>{exercise.exercise_name}</h4>
-          <button className='button-5' onClick={() => handleDeleteExercise(exercise.exercise_id)}>Delete</button>
+          <button 
+            className='button-5' 
+            disabled={activeAction.id === exercise.exercise_id && activeAction.type === "delete"}
+            onClick={() => handleDeleteExercise(exercise.exercise_id)}
+          >
+            Delete
+          </button>
         </div>
         {exercise.sets.map((set, setIdx) => (
           <div key={setIdx}>
@@ -256,7 +320,14 @@ export default function ActiveSession() {
         <button onClick={() => handleAddSet(exercise.exercise_id)}>Add Set</button>
       </div>
     ))}
-    <button className="button-3" onClick={() => handleAddExercise()}>Add Exercise</button>
+
+    <button 
+      className="button-3" 
+      disabled={activeAction.type === "add"}
+      onClick={() => handleAddExerciseRequest()}
+    >
+      {activeAction.type === "add" ? "Saving..." : "Add Exercise"}
+    </button>
     </>
   );
 }

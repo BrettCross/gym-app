@@ -1,20 +1,42 @@
-import { Link } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext';
+/**
+ * @file Sidebar.jsx
+ * @description Persistent navigation menu.
+ * Uses NavLink to provide automatic "active" styling for current routes.
+ */
 
+import { NavLink } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
-export default function Sidebar() {
+// Pass 'className' as a prop so the Layout can style the sidebar's position
+export default function Sidebar({ className }) {
   const { logout } = useAuth();
 
   return (
-    <nav className='nav-sidebar'>
+    <nav className={`${className} nav-sidebar`}>
+      <div className="sidebar-logo">
+        <h2>GymTracker</h2>
+      </div>
       <ul>
-        <li><Link to="/">Home</Link></li>
-        <li><Link to="/exercises">Exercises</Link></li>
-        <li><Link to="/workouts">Workouts</Link></li>
-        <li><Link to="/sessions">Sessions</Link></li>
-        <li><button className="button-5" onClick={logout}>Logout</button></li>
+        <li>
+          <NavLink to="/" end>Home</NavLink>
+        </li>
+        <li>
+          <NavLink to="/exercises">Exercises</NavLink>
+        </li>
+        <li>
+          <NavLink to="/workouts">Workouts</NavLink>
+        </li>
+        <li>
+          <NavLink to="/sessions">Sessions</NavLink>
+        </li>
       </ul>
+      
+      <div className="sidebar-footer">
+        <button className="button-5" onClick={logout}>
+          Logout
+        </button>
+      </div>
     </nav>
   );
 }

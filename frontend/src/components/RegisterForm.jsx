@@ -1,53 +1,70 @@
+/**
+ * RegisterForm.jsx
+ * 
+ * Handles new user registration. Upon successful account creation,
+ * it automatically authenticates the user to provide a seamless UX.
+ */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiService from '@utils/apiService';
+import { useAuth } from '../context/AuthContext'
 
 
-export default function RegisterForm({ onLogin }) {
-  const [user, setUser] = useState(
-    {
-      username: "",
-      email: "",
-      password: "",
-      firstName: "",
-      lastName: ""
-    }  
-  );
+export default function RegisterForm() {
+  const { login } = useAuth();
+
+  // Grouped state for the registration form
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: ""
+  });
+
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const fullName = `${user.firstName} ${user.lastName}`;
+    setIsSubmitting(true);
+    setError('');
+
+    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
     
-    const response = await apiService.post('/register', {
-      email: user.email,
-      username: user.username,
-      password: user.password,
-      full_name: fullName
-    });
-    
-    if (response.status == 201) {
-      const tokenResponse = await apiService.post('/token', {
-        username: user.username,
-        password: user.password
-      }, {
-        headers: {
-          "Content-Type":"multipart/form-data"
-        },
-        withCredentials: true // Sends cookies/session
+    try {
+      // Create the account
+      const response = await apiService.post('/register', {
+        email: formData.email,
+        username: formData.username,
+        password: formData.password,
+        full_name: fullName
       });
 
-      const token = tokenResponse.data.access_token;
-      try {
-        console.log(token)
-        localStorage.setItem('jwtToken', token)
-        onLogin(true)
-      } catch (error) {
-        console.error(error.response.data)
-      }
-    }
+      if (response.status === 201) {
+        // Auto-login after successful registration
+        const loginData = new FormData();
+        loginData.append('username', formData.username);
+        loginData.append('password', formData.password);
 
-    // if successful, log them in
-    // call post('/token') -> store token -> onLogin(true)
+        const tokenResponse = await apiService.post('/token', loginData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+
+        const { access_token } = tokenResponse.data;
+        login(access_token);
+      }
+
+    } catch (err) {
+      const message = err.response?.data?.detail || "Registration failed. Please try again."
+      setError(message);
+      setIsSubmitting(false); 
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -55,70 +72,84 @@ export default function RegisterForm({ onLogin }) {
       <div className="container">
         <div className="login-container">
           <div className="title-container">
-            <h1>Register</h1>
+            <h1>Create Account</h1>
           </div>
+
+          { error && <div className="error-banner">{error}</div> }
+
           <form onSubmit={handleSubmit}>
             <div className="input-group">
+              <div className="input-row">
               <label htmlFor="Name">Name</label>
-              <input
-                type="text"
-                value={user.firstName} 
-                onChange={(e) => setUser({...user, firstName: e.target.value})} 
-                id="first_name"
-                name="first_name"
-                placeholder="First Name"
-                required=""
-              />
-              <input
-                type="text"
-                value={user.lastName} 
-                onChange={(e) => setUser({...user, lastName: e.target.value})} 
-                id="last_name"
-                name="last_name"
-                placeholder="Last Name (optional)"
-              />
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName} 
+                  onChange={handleChange} 
+                  placeholder="First Name"
+                  required
+                  disabled={isSubmitting}
+                />
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName} 
+                  onChange={handleChange} 
+                  placeholder="Last Name"
+                  disabled={isSubmitting}
+                />
+              </div>
             </div>
+
             <div className="input-group">
               <label htmlFor="email">Email</label>
               <input
                 type="email"
-                value={user.email} 
-                onChange={(e) => setUser({...user, email: e.target.value})} 
-                id="email"
                 name="email"
-                placeholder="Enter an Email"
-                required=""
+                value={formData.email} 
+                onChange={handleChange} 
+                placeholder="gym@example.com"
+                required
+                disabled={isSubmitting}
               />
             </div>
+
             <div className="input-group">
               <label htmlFor="username">Username</label>
               <input
                 type="text"
-                value={user.username} 
-                onChange={(e) => setUser({...user, username: e.target.value})} 
-                id="username"
                 name="username"
-                placeholder="Enter a Username"
-                required=""
+                value={formData.username} 
+                onChange={handleChange} 
+                placeholder="Choose a Username"
+                required
+                disabled={isSubmitting}
               />
             </div>
+
             <div className="input-group">
               <label htmlFor="password">Password</label>
               <input
                 type="password"
-                value={user.password} 
-                onChange={(e) => setUser({...user, password: e.target.value})} 
-                id="password"
                 name="password"
-                placeholder="Enter a Password"
-                required=""
+                value={formData.password} 
+                onChange={handleChange} 
+                placeholder="Create a Password"
+                required
+                disabled={isSubmitting}
               />
             </div>
+
             <div className="button-container">
-              <button className="button" type="submit">
-                Sign Up
+              <button 
+                className="button" 
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Creating Account..." : "Sign Up"}
               </button>
             </div>
+
             <div className="footer-options">
               <p>Already have an account?</p>
               <Link to='/login'>Log in</Link>
@@ -127,5 +158,5 @@ export default function RegisterForm({ onLogin }) {
         </div>
       </div>
     </>
-  )
+  );
 }
