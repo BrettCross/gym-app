@@ -16,7 +16,7 @@ router = APIRouter()
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
-) -> dict:
+):
     """
     OAuth2 compatible token login, get an access token for future endpoints.
     """
@@ -39,7 +39,7 @@ async def login_for_access_token(
 
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-async def register_user(user_in: UserCreate) -> User:
+async def register_user(user_in: UserCreate):
     """
     Register a new user account.
     """

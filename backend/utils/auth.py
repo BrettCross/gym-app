@@ -17,7 +17,7 @@ ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
 password_hash = PasswordHash.recommended()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/token")
 
 # --- Password Logic ---
 def verify_password(plain_password, hashed_password) -> bool:
@@ -40,7 +40,6 @@ async def authenticate_user(username: str, password: str) -> User | None:
     Returns the User document if successful, otherwise None.
     """
     user = await get_user(username)
-    print(f"username: {user.username} | pwd: {user.hashed_password}")
     if not user:
         return None
     if not verify_password(password, user.hashed_password):
