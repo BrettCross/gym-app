@@ -1,16 +1,37 @@
 from datetime import datetime
+from enum import Enum
 from typing import Annotated
 
 from beanie import PydanticObjectId
+from beanie.operators import In
 from fastapi import Depends, APIRouter, HTTPException, status
+import httpx
 
 from backend.models.exercise import Exercise
 from backend.models.user import User
 from backend.schemas.exercise import ExerciseCreate, ExerciseRead, ExerciseUpdate
 from backend.utils import auth
+from backend.utils.constants import SYSTEM_USER_ID
 
 
 router = APIRouter()
+
+class ExerciseLibrary(str, Enum):
+    """
+    Specifies which library subset to query.
+    """
+    ALL = "all"
+    OFFICIAL = "official"
+    PERSONAL = "personal"
+
+
+@router.get("/libraries", response_model=list[str])
+async def get_library_types():
+    """
+    
+    """
+    return [lib.value for lib in ExerciseLibrary]
+
 
 # Create Exercise
 @router.post("", response_model=ExerciseRead, status_code=status.HTTP_201_CREATED)
@@ -48,19 +69,31 @@ async def list_exercises(
     current_user: Annotated[User, Depends(auth.get_current_active_user)],
     name: str | None = None, 
     equipment: str | None = None, 
-    muscle_group: str | None = None
+    muscle_group: str | None = None,
+    library: ExerciseLibrary | None = None
 ):
     """
-    List all exercises for the current user with optional filtering
+    List all exercises for the current user with optional filtering 
+    and smart library segmentation.
     """
-    query = Exercise.find(Exercise.user_id == current_user.id)
+    if library == ExerciseLibrary.PERSONAL:
+        query = Exercise.find(Exercise.user_id == current_user.id)
+    elif library == ExerciseLibrary.OFFICIAL:
+        query = Exercise.find(Exercise.user_id == SYSTEM_USER_ID)
+    else:
+        # Default 'all' logic
+        query = Exercise.find(In(Exercise.user_id, [current_user.id, SYSTEM_USER_ID]))
+
     if name:
         query = query.find(Exercise.name == {"$regex": name, "$options": "i"})
     if equipment:
         query = query.find(Exercise.equipment == {"$regex": equipment, "$options": "i"})
     if muscle_group:
         query = query.find(Exercise.muscle_group == {"$regex": muscle_group, "$options": "i"})
-    exercises = await query.to_list()
+    exercises = await query.sort("name").to_list()
+
+    # sort the exercises for the current_user first
+    exercises.sort(key=lambda x: 0 if x.user_id == current_user.id else 1)
     return exercises
 
 

@@ -1,0 +1,332 @@
+[
+  {
+    "name": "Barbell Bench Press",
+    "muscle_group": ["chest", "triceps", "shoulders"],
+    "equipment": ["barbell", "bench"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Barbell Incline Bench Press",
+    "muscle_group": ["chest", "triceps", "shoulders"],
+    "equipment": ["barbell", "bench"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Pullover",
+    "muscle_group": ["lats", "chest", "upper back", "triceps"],
+    "equipment": ["dumbbell", "bench"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Chin-Up",
+    "muscle_group": ["lats", "upper back", "biceps", "forearms"],
+    "equipment": ["pull-up bar"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Pull-Up",
+    "muscle_group": ["lats", "upper back", "biceps", "forearms"],
+    "equipment": ["pull-up bar"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Barbell Bent-Over Rows",
+    "muscle_group": ["upper back", "lats", "biceps", "forearms"],
+    "equipment": ["barbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Deadlift",
+    "muscle_group": ["hamstrings", "glutes", "lower back", "traps"],
+    "equipment": ["barbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Straight-Leg Deadlift",
+    "muscle_group": ["hamstrings", "glutes", "lower back", "upper back", "traps"],
+    "equipment": ["barbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Lying Leg Raise",
+    "muscle_group": ["abs"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Barbell Back Squat",
+    "muscle_group": ["quads", "glutes", "hamstrings", "lower back"],
+    "equipment": ["barbell", "rack"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Bodyweight Squat",
+    "muscle_group": ["quads", "glutes", "hamstrings", "lower back"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Bodyweight Lunge",
+    "muscle_group": ["quads", "glutes", "hamstrings"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Barbell Lunge",
+    "muscle_group": ["quads", "glutes", "hamstrings"],
+    "equipment": ["barbell", "rack"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Dumbbell Lunge",
+    "muscle_group": ["quads", "glutes", "hamstrings"],
+    "equipment": ["dumbbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Lying Leg Curl",
+    "muscle_group": ["hamstrings", "calves"],
+    "equipment": ["machine"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Seated Leg Curl",
+    "muscle_group": ["hamstrings", "calves"],
+    "equipment": ["machine"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Leg Extension",
+    "muscle_group": ["quads"],
+    "equipment": ["machine"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Standing Calf Raise",
+    "muscle_group": ["calves"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Seated Calf Raise",
+    "muscle_group": ["calves"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Barbell Clean and Press",
+    "muscle_group": ["full body"],
+    "equipment": ["barbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Arnold Press",
+    "muscle_group": ["shoulders", "triceps"],
+    "equipment": ["dumbbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Dumbbell Lateral Raise",
+    "muscle_group": ["shoulders"],
+    "equipment": ["dumbbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Rear Delt Rever Fly",
+    "muscle_group": ["shoulders", "upper back"],
+    "equipment": ["dumbbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Front Raise ",
+    "muscle_group": ["shoulders"],
+    "equipment": ["dumbbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Barbell Upright Row",
+    "muscle_group": ["shoulders", "traps", "upper back", "biceps", "forearms"],
+    "equipment": ["barbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Dumbbell Upright Row",
+    "muscle_group": ["shoulders", "traps", "upper back", "biceps", "forearms"],
+    "equipment": ["dumbbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Barbell Shoulder Press",
+    "muscle_group": ["shoulders", "triceps"],
+    "equipment": ["barbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Dumbbell Shoulder Press",
+    "muscle_group": ["shoulders", "triceps"],
+    "equipment": ["dumbbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Barbell Bicep Curl",
+    "muscle_group": ["biceps"],
+    "equipment": ["barbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Dumbbell Bicep Curl",
+    "muscle_group": ["biceps"],
+    "equipment": ["dumbbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Incline Dumbbell Bicep Curl",
+    "muscle_group": ["biceps"],
+    "equipment": ["dumbbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Concentration Curl",
+    "muscle_group": ["biceps"],
+    "equipment": ["dumbbell"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Barbell Close-Grip Bench Press",
+    "muscle_group": ["triceps", "chest", "shoulders"],
+    "equipment": ["barbell", "bench"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Tricep Pressdown",
+    "muscle_group": ["triceps"],
+    "equipment": ["machine"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Barbell Lying Tricep Extensions",
+    "muscle_group": ["triceps"],
+    "equipment": ["barbell", "bench"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Dumbbell Lying Tricep Extensions",
+    "muscle_group": ["triceps"],
+    "equipment": ["dumbbell", "bench"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Barbell Wrist Curl",
+    "muscle_group": ["forearms"],
+    "equipment": ["barbell", "bench"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Dumbbell Wrist Curl",
+    "muscle_group": ["forearms"],
+    "equipment": ["dumbbell", "bench"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Reverse Barbell Wrist Curl",
+    "muscle_group": ["forearms"],
+    "equipment": ["barbell", "bench"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Reverse Dumbbell Wrist Curl",
+    "muscle_group": ["forearms"],
+    "equipment": ["dumbbell", "bench"],
+    "exercise_type": "weight reps"
+  },
+  {
+    "name": "Push-Up",
+    "muscle_group": ["chest", "shoulders", "triceps"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Incline Push-Up",
+    "muscle_group": ["chest", "shoulders", "triceps"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Decline Push-Up",
+    "muscle_group": ["chest", "shoulders", "triceps"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Close-Grip Push-Up",
+    "muscle_group": ["triceps", "chest", "shoulders"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Diamond Push-Up",
+    "muscle_group": ["triceps", "chest", "shoulders"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Pike Push-Up",
+    "muscle_group": ["shoulders", "triceps", "chest"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Ab Scissors",
+    "muscle_group": ["abs"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Crunch",
+    "muscle_group": ["abs"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Bicycle Crunch",
+    "muscle_group": ["abs"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Sit Up",
+    "muscle_group": ["abs"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Plank",
+    "muscle_group": ["abs"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Side Plank",
+    "muscle_group": ["abs"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Russian Twist",
+    "muscle_group": ["abs"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Heel Tap",
+    "muscle_group": ["abs"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  },
+  {
+    "name": "Dead Bug",
+    "muscle_group": ["abs"],
+    "equipment": ["none"],
+    "exercise_type": "reps"
+  }
+]
