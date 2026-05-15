@@ -13,10 +13,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, ServerRouter, useLocation, useParams } from 'react-router-dom';
 import apiService from '@utils/apiService';
+import { useAuth } from '../context/AuthContext';
 
 export default function WorkoutDetail() {
   const { id } = useParams();
   const location = useLocation();
+  const { user } = useAuth();
+  const currentUserId = user?.id;
 
   // UI State
   const [isEditing, setIsEditing] = useState(location.state?.autoEdit || false);
@@ -26,45 +29,51 @@ export default function WorkoutDetail() {
 
   // Data State
   const [workout, setWorkout] = useState(null);
-  const [editedWorkout, setEditedWorkout] = useState(null); // the 'Draft' copy
-  // const [workout, setWorkout] = useState({
-  //   id: "",
-  //   user_id: "",
-  //   name: "",
-  //   exercises: []
-  // });
+  const [editedWorkout, setEditedWorkout] = useState(null); 
   
   // Modal/Search State
-  const [availableExercises, setAvailableExercises] = useState([])
+  const [exerciseLibrary, setExerciseLibrary] = useState([]);
+  const [libraryTypes, setLibraryTypes] = useState([]);
+  const [activeTab, setActiveTab] = useState('');
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+
   const addExerciseDialogRef = useRef(null);
-  // const filteredExercises = availableExercises.filter(e => e.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   /**
    * Fetch template data on mount or when ID changes.
    */
   useEffect(() => {
-      const fetchData = async () => {
+      const initializeData = async () => {
         setError(null);
-        // setIsLoading(true);
 
         try {
-          const response = await apiService.get(`/workouts/${id}`);
-          setWorkout(response.data);
+          // const response = await apiService.get(`/workouts/${id}`);
+          // setWorkout(response.data);
+          const [workoutRes, libRes, typesRes] = await Promise.all([
+            apiService.get(`/workouts/${id}`),
+            apiService.get('/exercises'),
+            apiService.get('/exercises/libraries')
+          ]);
+
+          setWorkout(workoutRes.data);
+          setExerciseLibrary(libRes.data);
+          setLibraryTypes(typesRes.data);
+
+          if (typesRes.data.length > 0) setActiveTab(typesRes.data[0])
+
           // if coming from 'Create Workout' - initialize draft immediately
           if (location.state?.autoEdit) {
-            setEditedWorkout(response.data);
+            setEditedWorkout(workoutRes.data);
           }
         } catch (err) {
-          const message = err.response?.data?.detail || "Failed to fetch workout";
+          const message = err.response?.data?.detail || "Failed to load workout data";
           setError(message);
-          // console.error("Failed to fetch workout", error);
         } finally {
           setIsLoading(false);
         }
       };
-      fetchData();
+      initializeData();
     }, [id, location.state?.autoEdit]);
 
   /**
@@ -93,8 +102,6 @@ export default function WorkoutDetail() {
   const handleSave = async () => {
     setError(null);
     setActiveAction({ id: id, type: "save" });
-
-    // Normalize payload for backend expectation
     const payload = {
       ...editedWorkout,
       exercises: editedWorkout.exercises.map((e, index) => ({
@@ -110,7 +117,6 @@ export default function WorkoutDetail() {
       setIsEditing(false);
       setEditedWorkout(null);
     } catch (err) {
-      // console.error(error.response?.data);
       const message = err.response?.data?.detail || "Failed to save workout";
       setError(message);
     } finally {
@@ -127,7 +133,7 @@ export default function WorkoutDetail() {
       const response = await apiService.get('/exercises');
       const currentExIDs = editedWorkout.exercises.map(e => e.exercise_id);
       const filtered = response.data.filter(e => !currentExIDs.includes(e.id));
-      setAvailableExercises(filtered);
+      setExerciseLibrary(filtered);
       addExerciseDialogRef.current.showModal();
     } catch (err) {
       const message = err.response?.data?.detail || "Failed to get exercises";
@@ -234,24 +240,20 @@ export default function WorkoutDetail() {
         };
       })
     }));
-    
-    // setEditedWorkout({
-    //   ...editedWorkout, 
-    //   exercises: editedWorkout.exercises.map(e => {
-    //     if (e.exercise_id === exerciseID) {
-    //       return {
-    //         ...e,
-    //         sets: e.sets.filter((_, i) => i !== setIndex)
-    //       };
-    //     }
-    //     return e;
-    //   })
-    // });
   };
 
-  const filteredExercises = availableExercises.filter(e => 
-    e.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredExercises = exerciseLibrary.filter(e => {
+    const isOwner = e.user_id === currentUserId;
+
+    if (activeTab === 'official' && isOwner) return false;
+    if (activeTab === 'personal' && !isOwner) return false;
+
+    const term = searchQuery.toLowerCase();
+    return (
+      e.name.toLowerCase().includes(term) ||
+      e.muscle_group.some(m => m.toLowerCase().includes(term))
+    )
+  });
 
   if (isLoading) return <div className="loading">Loading workout details...</div>;
   if (!workout) return <div className="error">Workout not found.</div>;
@@ -273,6 +275,17 @@ export default function WorkoutDetail() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          <div className="tabs-container">
+            {libraryTypes.map(type => (
+              <button 
+                key={type} 
+                onClick={() => setActiveTab(type)}
+                className={activeTab === type ? 'active' : ''}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
         </header>
         
         <div className="search-results-list">
@@ -438,88 +451,3 @@ export default function WorkoutDetail() {
     </>
   );
 }
-  // return (
-  //   <>
-  //   {error && <div className="error-banner">{error}</div>}
-
-  //   {/* Exercise Selection Modal */}
-  //   <dialog ref={addExerciseDialogRef}>
-  //     <input
-  //       type="text"
-  //       placeholder='Search...'
-  //       value={searchQuery}
-  //       onChange={(e) => setSearchQuery(e.target.value)}
-  //     />
-  //     {filteredExercises.map((exercise) => (
-  //       <div key={exercise.id} onClick={() => handleToggleExercise(exercise)}>
-  //       {exercise.name} | ID: {exercise.id} | _ID: {exercise._id}
-  //       </div>
-  //     ))}
-  //     <button className='button-3' onClick={() => handleConfirmAddExercises()}>Add</button>
-  //   </dialog>
-  //   <div className='container-v'>
-  //     <Link to="/workouts">
-  //       <button>Back</button>
-  //     </Link>
-  //       {isEditing ? (
-  //       <div className='container-h'>
-  //         <input 
-  //           value={editedWorkout.name} 
-  //           onChange={(e) => setEditedWorkout({...editedWorkout, name: e.target.value})} 
-  //         />
-  //         <div>
-  //           <button className='button-4' onClick={() => handleCancel()}>Cancel</button>
-  //           <button className='button-3' onClick={() => handleSave()}>Save</button>
-  //         </div>
-  //         <div><button className='button-4' onClick={() => handleOpenAddExercise()}>Add Exercise</button></div>
-  //       </div>
-  //       ) : (
-  //         <div className="container-h">
-  //           <h3>{workout.name}</h3>
-  //           <button className='button-4' onClick={() => handleEditWorkout()}>Edit Workout</button>
-  //         </div>
-  //       )}
-  //     {(isEditing ? editedWorkout.exercises : workout.exercises).map((exercise) => (
-  //       <div key={exercise.exercise_id} className='result-container'>
-  //         <div className='result'>
-  //           <h3 className='result-title'>{exercise.name}</h3>
-  //           <ol>
-  //             {exercise.sets.map((set, index) => (
-  //               <li key={index}>
-  //                 {isEditing ? (
-  //                   <>
-  //                     <input 
-  //                       type="number" 
-  //                       value={set.weight} 
-  //                       onChange={(e) => handleUpdateSet(exercise.exercise_id, index, "weight", parseFloat(e.target.value))}
-  //                     />
-  //                     <span>lbs x</span>
-  //                     <input 
-  //                       type="number" 
-  //                       value={set.reps} 
-  //                       onChange={(e) => handleUpdateSet(exercise.exercise_id, index, "reps", parseInt(e.target.value))}
-  //                     />
-  //                     <span>reps</span>
-  //                     <button onClick={() => handleRemoveSet(exercise.exercise_id, index)}>Remove</button>
-  //                   </>
-  //                 ) : (
-  //                   <h4>{set.weight}lbs x {set.reps} reps</h4>
-  //                 )}
-  //               </li>
-  //             ))}
-  //           </ol>
-  //           {isEditing && (
-  //             <button onClick={() => handleAddSet(exercise.exercise_id)}>Add Set</button>
-  //           )}
-  //         </div>
-  //         <div className='button-container'>
-  //           {isEditing && (
-  //             <button className='button-5' onClick={() => handleRemoveExercise(exercise.exercise_id)}>remove exercise</button>
-  //             )}
-  //         </div>
-  //       </div>
-  //     ))}
-  //   </div>
-  //   </>
-  // );
-// }

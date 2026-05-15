@@ -19,6 +19,8 @@ import { AuthContext } from "../context/AuthContext";
 export function AuthProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(null);
+
   const logoutTimer = useRef(null);
   
   const navigate = useNavigate();
@@ -34,6 +36,7 @@ export function AuthProvider({ children }) {
     if (logoutTimer.current) clearTimeout(logoutTimer.current);
     localStorage.removeItem('access_token');
     setIsLoggedIn(false);
+    setUser(null);
     navigate('/login')
   }, [navigate]);
 
@@ -81,6 +84,7 @@ export function AuthProvider({ children }) {
    * Initialization & Session Recovery
    * 
    * Runs on app startup to verify if a stored token is still valid with the backend.
+   * Captures user data for use throughout app. 
    */
   useEffect(() => {
     const verifyAuth = async () => {
@@ -88,7 +92,8 @@ export function AuthProvider({ children }) {
       if (token) {
         try {
           // Confirm token is valid with server
-          await apiService.get('/users/me');
+          const response = await apiService.get('/users/me');
+          setUser(response.data);
           setIsLoggedIn(true);
           setAutoLogout(token);
         } catch (error) {
@@ -115,7 +120,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoading, isLoggedIn, login, logout }}>
+    <AuthContext.Provider value={{ isLoading, isLoggedIn, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
