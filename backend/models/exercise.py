@@ -20,6 +20,11 @@ class Exercise(Document):
         examples=["Barbell Bench Press", "Deadlift"]
     )
 
+    is_official: bool = Field(
+        default=False,
+        description="Flag to represent if exercise is 'verified' or user created"
+    )
+
     equipment: list[str] = Field(
         default_factory=list,
         description="List of equipment required. Use 'none' for bodyweight movements.",

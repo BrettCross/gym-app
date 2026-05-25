@@ -54,6 +54,20 @@ class ExerciseRead(ExerciseBase):
         description="The identifier of the user who owns this template."
     )
 
+    is_official: bool = Field(
+        description="Flag to represent if exercise is 'verified' or user created"
+    )
+
+    can_edit: bool = Field(
+        default=False,
+        description=""
+    )
+
+    can_delete: bool = Field(
+        default=False,
+        description=""
+    )
+
     created_at: datetime
     updated_at: datetime
 
