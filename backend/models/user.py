@@ -1,7 +1,10 @@
 from datetime import datetime, timezone
+from enum import Enum
 
 from beanie import Document
 from pydantic import EmailStr, Field
+
+from backend.models.enums import UserRole
 
 
 class User(Document):
@@ -30,6 +33,11 @@ class User(Document):
     full_name: str | None = Field(
         default=None,
         description="Optional display name."
+    )
+
+    role: UserRole = Field(
+        default=UserRole.USER,
+        description="The authorization level of the user, determining access to resources."
     )
 
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

@@ -1,6 +1,8 @@
 from beanie import PydanticObjectId
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
+from backend.models.user import UserRole
+
 
 class UserBase(BaseModel):
     """
@@ -43,6 +45,10 @@ class UserRead(UserBase):
 
     id: PydanticObjectId = Field(
         description="Unique database identifier"
+    )
+
+    role: UserRole = Field(
+        description="The authorization level of the user, determining access to resources."
     )
     
     model_config = ConfigDict(

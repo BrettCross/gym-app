@@ -9,21 +9,14 @@ import httpx
 
 from backend.models.exercise import Exercise
 from backend.models.user import User
+from backend.models.enums import ExerciseLibrary
 from backend.schemas.exercise import ExerciseCreate, ExerciseRead, ExerciseUpdate
 from backend.utils import auth
+from backend.utils.policies import ExercisePolicy
 from backend.utils.constants import SYSTEM_USER_ID
 
 
 router = APIRouter()
-
-class ExerciseLibrary(str, Enum):
-    """
-    Specifies which library subset to query.
-    """
-    ALL = "all"
-    OFFICIAL = "official"
-    PERSONAL = "personal"
-
 
 @router.get("/libraries", response_model=list[str])
 async def get_library_types():
@@ -76,13 +69,9 @@ async def list_exercises(
     List all exercises for the current user with optional filtering 
     and smart library segmentation.
     """
-    if library == ExerciseLibrary.PERSONAL:
-        query = Exercise.find(Exercise.user_id == current_user.id)
-    elif library == ExerciseLibrary.OFFICIAL:
-        query = Exercise.find(Exercise.user_id == SYSTEM_USER_ID)
-    else:
-        # Default 'all' logic
-        query = Exercise.find(In(Exercise.user_id, [current_user.id, SYSTEM_USER_ID]))
+
+    auth_filter = ExercisePolicy.get_read_filter(current_user, library)
+    query = Exercise.find(auth_filter)
 
     if name:
         query = query.find(Exercise.name == {"$regex": name, "$options": "i"})
@@ -92,9 +81,18 @@ async def list_exercises(
         query = query.find(Exercise.muscle_group == {"$regex": muscle_group, "$options": "i"})
     exercises = await query.sort("name").to_list()
 
-    # sort the exercises for the current_user first
-    exercises.sort(key=lambda x: 0 if x.user_id == current_user.id else 1)
-    return exercises
+    # sort official exercises before user's exercises
+    exercises.sort(key=lambda x: (not x.is_official, x.name))
+
+    # include edit/delete permissions for frontend
+    results = []
+    for ex in exercises:
+        out = ExerciseRead.model_validate(ex)
+        out.can_edit = ExercisePolicy.can_modify(current_user, ex)
+        out.can_delete = ExercisePolicy.can_delete(current_user, ex)
+        results.append(out)
+
+    return results
 
 
 # Read Exercise with ID - backend use
@@ -106,13 +104,17 @@ async def read_exercise(
     """
     Fetch a single exercise by its unique ID for the authenticated user.
     """
-    exercise = await Exercise.find_one(
-        Exercise.user_id == current_user.id,
-        Exercise.id == exercise_id
-    )
-    
-    if not exercise:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
+    # exercise = await Exercise.find_one(
+    #     Exercise.user_id == current_user.id,
+    #     Exercise.id == exercise_id
+    # )
+    exercise = await Exercise.get(exercise_id)
+    if not exercise or not ExercisePolicy.can_view(current_user, exercise):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Exercise not found"
+        )
+
     return exercise
 
 
@@ -132,18 +134,23 @@ async def update_exercise(
     Returns a **404** if the exercise is unavailable.
     """
 
-    exercise = await Exercise.find_one(
-        Exercise.user_id == current_user.id,
-        Exercise.id == exercise_id
-    )
+    # exercise = await Exercise.find_one(
+    #     Exercise.user_id == current_user.id,
+    #     Exercise.id == exercise_id
+    # )
+    exercise = await Exercise.get(exercise_id)
 
-    if not exercise:
+    if not exercise or not ExercisePolicy.can_modify(current_user, exercise):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
             detail="Exercise not found"
     )
 
     update_data = exercise_update.model_dump(exclude_unset=True)
+
+    if current_user.role != "ADMIN":
+        update_data.pop("is_official", None)
+
     for field, value in update_data.items():
         setattr(exercise, field, value)
     await exercise.save()
@@ -161,16 +168,13 @@ async def delete_exercise(
 
     Returns a **404** if the exercise is unavailable.
     """
-    exercise = await Exercise.find_one(
-        Exercise.id == exercise_id,
-        Exercise.user_id == current_user.id
-    )
+    exercise = await Exercise.get(exercise_id)
 
-    if not exercise:
+    if not exercise or not ExercisePolicy.can_delete(current_user, exercise):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
             detail="Exercise not found"
-        )
+    )
     
     await exercise.delete()
     return None

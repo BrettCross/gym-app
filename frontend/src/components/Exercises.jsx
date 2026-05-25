@@ -160,7 +160,7 @@ export default function Exercises() {
           <ExerciseCard
             key={exercise.id}
             exercise={exercise}
-            isOwner={exercise.user_id === currentUserId}
+            // canManage={user?.role === "admin" || exercise.user_id === currentUserId}
             onEdit={() => handleShowForm(exercise)}
             onDelete={() => handleDelete(exercise.id)}
           />
@@ -269,28 +269,27 @@ function ExerciseForm({ onExerciseAdded, exerciseToEdit }) {
  * 
  * @param {Object} props
  * @param {Object} props.exercise - The exercise data object.
- * @param {bool} props.isOwner - Whether current user owns this exercise.
  * @param {Function} props.onEdit - Callback to trigger edit modal
  * @param {Function} props.onDelete - Callback to trigger delete logic
  */
-function ExerciseCard({ exercise, isOwner, onEdit, onDelete }) {
+function ExerciseCard({ exercise, onEdit, onDelete }) {
   return (
     <div className='result-container'>
       <div className='result'>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <h3 className='result-title'>{exercise.name}</h3>
-          {!isOwner && <span className="badge-system">✅</span>}
+          {exercise.is_official && <span className="badge-system">✅</span>}
         </div>
         <h5 className='result-desc'>
           {exercise.muscle_group.join(", ")} | {exercise.equipment.join(", ")} | {exercise.exercise_type}
         </h5>
       </div>
       <div className='button-container'>
-        {isOwner && (
-          <>
+        {exercise.can_edit && (
             <button className='button-4' onClick={onEdit}>Edit</button>
+        )}
+        {exercise.can_delete && (
             <button className='button-5' onClick={onDelete}>Delete</button>
-          </>
         )}
       </div>
     </div>
