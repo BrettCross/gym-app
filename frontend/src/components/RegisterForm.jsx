@@ -79,26 +79,25 @@ export default function RegisterForm() {
 
           <form onSubmit={handleSubmit}>
             <div className="input-group">
-              <div className="input-row">
               <label htmlFor="Name">Name</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName} 
-                  onChange={handleChange} 
-                  placeholder="First Name"
-                  required
-                  disabled={isSubmitting}
-                />
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName} 
-                  onChange={handleChange} 
-                  placeholder="Last Name"
-                  disabled={isSubmitting}
-                />
-              </div>
+              <input
+                type="text"
+                name="firstName"
+                value={formData.firstName} 
+                onChange={handleChange} 
+                placeholder="First Name"
+                required
+                disabled={isSubmitting}
+              />
+              <br/>
+              <input
+                type="text"
+                name="lastName"
+                value={formData.lastName} 
+                onChange={handleChange} 
+                placeholder="Last Name"
+                disabled={isSubmitting}
+              />
             </div>
 
             <div className="input-group">
@@ -140,15 +139,13 @@ export default function RegisterForm() {
               />
             </div>
 
-            <div className="button-container">
-              <button 
-                className="button" 
-                type="submit"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Creating Account..." : "Sign Up"}
-              </button>
-            </div>
+            <button 
+              className="button" 
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Creating Account..." : "Sign Up"}
+            </button>
 
             <div className="footer-options">
               <p>Already have an account?</p>

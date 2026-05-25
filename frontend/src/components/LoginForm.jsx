@@ -41,8 +41,8 @@ export default function LoginForm() {
       });
 
       // Extract the access token and update global Auth state
-      const { access_token } = response.data;
-      login(access_token);
+      const { access_token, refresh_token } = response.data;
+      login(access_token, refresh_token);
     } catch (err) {
       // Handle server-side validation or credential errors
       const message = err.response?.data?.detail || "Invalid username or password";
@@ -90,15 +90,14 @@ export default function LoginForm() {
               />
             </div>
 
-            <div className="button-container">
-              <button 
-                className="button" 
-                type="submit"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Logging in..." : "Login"}
-              </button>
-            </div>
+            <button 
+              className="button" 
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Logging in..." : "Login"}
+            </button>
+            
 
             <div className="footer-options">
               <p>Don't have an account?</p>

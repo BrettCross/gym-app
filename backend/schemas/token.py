@@ -7,7 +7,12 @@ class Token(BaseModel):
     """
     access_token: str = Field(
         ...,
-        description="The JWT access token"
+        description="Short-lived JWT access token"
+    )
+
+    refresh_token: str = Field(
+        ...,
+        description="Long-lived token used to rotate credentials and maintain the session."
     )
 
     token_type: str = Field(
@@ -19,12 +24,17 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     """
-    Represents the data payload stored within the JWT 'sub' claim.
+    Payload structure for decoded tokens.
     """
 
     username: str | None = Field(
         default=None,
         description="The username of the authenticated user"
+    )
+
+    role: str | None = Field(
+        default=None,
+        description="The role of the authenticated user"
     )
 
 

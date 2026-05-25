@@ -10,9 +10,8 @@
  * - Performance Optimized: Uses useCallback and useRef to prevent unnecessary re-renders.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 import apiService from "../utils/apiService";
 import { AuthContext } from "../context/AuthContext";
 
@@ -21,7 +20,7 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
 
-  const logoutTimer = useRef(null);
+  // const logoutTimer = useRef(null);
   
   const navigate = useNavigate();
 
@@ -33,8 +32,8 @@ export function AuthProvider({ children }) {
    */
   const logout = useCallback(() => {
     // TODO: use cookie instead of local storage
-    if (logoutTimer.current) clearTimeout(logoutTimer.current);
     localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     setIsLoggedIn(false);
     setUser(null);
     navigate('/login')
@@ -43,41 +42,12 @@ export function AuthProvider({ children }) {
   /**
    * Reactive Security Listener
    * 
-   * Attaches a global event listener to catch 401 Unauthorized signals 
-   * from the apiService interceptor.
+   * Listens for the 'unauthorized-logout' event emitted by apiService
+   * when both access and refresh tokens are invalid.
    */
   useEffect(() => {
     window.addEventListener('unauthorized-logout', logout);
     return () => window.removeEventListener('unauthorized-logout', logout);
-  }, [logout]);
-
-  /**
-   * Proactive Auto-Logout Timer
-   * 
-   * Decodes the JWT expiration claim and schedules a logout event.
-   * This ensures the UI reflects the token state without needing an API hit.
-   */
-  const setAutoLogout = useCallback((token) => {
-    try {
-      const { exp } = jwtDecode(token);
-      const delay = (exp * 1000) - Date.now();
-
-      // Clear existing timer if setting a new one (e.g., manual refresh)
-      if (logoutTimer.current) clearTimeout(logoutTimer.current);
-
-      if (delay > 0) {
-        logoutTimer.current = setTimeout(() => {
-          console.log("Token expired! Logging out...");
-          logout();
-        }, delay);
-      } else {
-        // If token is already expired, log out immediately
-        logout();
-      }
-    } catch (error) {
-      logout();
-      console.error("Invalid token format", error);
-    }
   }, [logout]);
 
   /**
@@ -95,28 +65,32 @@ export function AuthProvider({ children }) {
           const response = await apiService.get('/users/me');
           setUser(response.data);
           setIsLoggedIn(true);
-          setAutoLogout(token);
         } catch (error) {
-          console.log(error);
-          logout();
+          // If /me fails, apiService will attempt a refresh.
+          // If that fails too, the 'unauthorized-logout' event handles it.
+          console.error("initial auth verification failed:", error);
         }
       }
       setIsLoading(false);
     };
     verifyAuth();
-  }, [logout, setAutoLogout]);
+  }, []);
 
   /**
    * Login Handler
    * 
-   * Stores the token, updates state, and kicks off the proactive logout timer.
+   * Captures the dual-token payload from the login route.
    */
-  const login = (token) => {
+  const login = (accessToken, refreshToken) => {
     // TODO: use cookie instead of local storage
-    localStorage.setItem('access_token', token);
+    localStorage.setItem('access_token', accessToken);
+    localStorage.setItem('refresh_token', refreshToken);
     setIsLoggedIn(true);
-    setAutoLogout(token);
-    navigate('/');
+    // Fetch user profile immediately to populate Role and Username
+    apiService.get('/users/me').then(response => {
+        setUser(response.data);
+        navigate('/');
+    });
   };
 
   return (

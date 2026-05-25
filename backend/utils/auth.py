@@ -1,4 +1,5 @@
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
@@ -8,13 +9,14 @@ from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pwdlib import PasswordHash
 
-from backend.models.user import User
+from backend.models.user import User, UserRole
 from backend.schemas.token import TokenData
 
 # --- Configuration ---
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"))
 
 password_hash = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/token")
@@ -24,9 +26,11 @@ def verify_password(plain_password, hashed_password) -> bool:
     """Verifies a plain text password against a stored hash."""
     return password_hash.verify(plain_password, hashed_password)
 
+
 def get_password_hash(password) -> str:
     """Generates a secure hash from a plain text password."""
     return password_hash.hash(password)
+
 
 # --- User Retreival Logic ---
 async def get_user(username: str) -> str | None:
@@ -35,8 +39,10 @@ async def get_user(username: str) -> str | None:
     """
     return await User.find_one(User.username == username)
     
+
 async def authenticate_user(username: str, password: str) -> User | None:
-    """Validates User credentials.
+    """
+    Validates User credentials.
     Returns the User document if successful, otherwise None.
     """
     user = await get_user(username)
@@ -46,20 +52,36 @@ async def authenticate_user(username: str, password: str) -> User | None:
         return None
     return user
 
+
 # --- Token Logic ---
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+def create_refresh_token(username: str) -> str:
+    """
+    Generates a long-lived refresh token with a unique ID (JTI) for rotation.
+    """
+    expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode = {
+        "sub": username,
+        "jti": str(uuid.uuid4()),
+        "exp": expire,
+        "type": "refresh"
+    }
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_access_token(user: User) -> str:
     """
     Generates a JWT access token.
     Defaults to 15 minutes if no delta is provided.
     """
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-
-    to_encode.update({"exp": expire})
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode = {
+        "sub": user.username,
+        "role": user.role,
+        "exp": expire,
+        "type": "access"
+    }
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
 
 # --- Dependency Injection ---
 async def get_current_user(
@@ -78,9 +100,11 @@ async def get_current_user(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
-        if username is None:
+        token_type = payload.get("type")
+        role = payload.get("role")
+        if username is None or token_type != "access":
             raise credentials_exception
-        token_data = TokenData(username=username)
+        token_data = TokenData(username=username, role=role)
     except InvalidTokenError:
         raise credentials_exception
 
@@ -90,6 +114,7 @@ async def get_current_user(
 
     return user
 
+
 async def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)]
 ) -> User:
@@ -97,3 +122,20 @@ async def get_current_active_user(
     Final dependency to ensure user is active (and eventually check roles).
     """
     return current_user
+
+
+def require_role(allowed_roles: list[UserRole]):
+    """
+    Factory that creates a role-validation dependency.
+    Accepts a list of roles to support multi-role access to complex endpoints.
+    """
+    async def role_checker(
+        current_user: Annotated[User, Depends(get_current_active_user)]
+    ) -> User:
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Not Found"
+            )
+        return current_user
+    return role_checker
