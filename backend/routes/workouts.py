@@ -9,6 +9,8 @@ from backend.models.workout import Workout, WorkoutExercise, ExerciseSet
 from backend.schemas.workout import WorkoutCreate, WorkoutRead, WorkoutUpdate, WorkoutExerciseBase, WorkoutDetailRead, WorkoutExerciseDetail, SetSchema
 from backend.models.exercise import Exercise
 from backend.utils import auth
+from backend.utils.policies import WorkoutPolicy
+from backend.services.workouts import get_enriched_workout
 
 
 router = APIRouter()
@@ -52,10 +54,23 @@ async def list_workouts(
     Lists all the workouts that the authenticated user owns with optional filtering by name.
     """
 
-    query = Workout.find(Workout.user_id == current_user.id)
+    auth_filter = WorkoutPolicy.get_read_filter(current_user)
+    
+    query = Workout.find(auth_filter)
+    
     if name:
         query = query.find(Workout.name == {"$regex": name, "$options": "i"})
-    return await query.to_list()
+
+    workouts = await query.to_list()
+
+    return [
+        WorkoutRead(
+            **w.model_dump(),
+            can_edit=WorkoutPolicy.can_modify(current_user, w),
+            can_delete=WorkoutPolicy.can_delete(current_user, w)
+        )
+        for w in workouts
+    ]
 
 
 @router.get("/{workout_id}", response_model=WorkoutDetailRead, status_code=status.HTTP_200_OK)
@@ -64,43 +79,18 @@ async def read_workout(
     workout_id: PydanticObjectId
 ):
     """
-    Fetch a detailed workout rountine for the authenticated user.
+    Fetch a detailed workout routine for the authenticated user.
     """
 
-    workout = await Workout.find_one(
-        Workout.user_id == current_user.id,
-        Workout.id == workout_id
-    )
+    workout = await Workout.get(workout_id)
 
-    if not workout:
+    if not workout or not WorkoutPolicy.can_view(current_user, workout):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
             detail="Workout not found"
         )
     
-    # fetch all exercises in one database hit
-    exercise_ids = [e.exercise_id for e in workout.exercises]
-    exercises = await Exercise.find(
-        In(Exercise.id, exercise_ids)
-    ).to_list()
-
-    exercise_map = {ex.id: ex for ex in exercises}
-
-    detailed_exercises = []
-    for e in workout.exercises:
-        ex_info = exercise_map.get(e.exercise_id)
-        if ex_info:
-            detailed_exercises.append({
-                **ex_info.model_dump(),
-                "exercise_id": e.exercise_id,
-                "order": e.order,
-                "sets": e.sets
-            })
-    
-    return ({
-        **workout.model_dump(),
-        "exercises": detailed_exercises
-    })
+    return await get_enriched_workout(current_user, workout)
 
 
 @router.patch("/{workout_id}", response_model=WorkoutDetailRead, status_code=status.HTTP_200_OK)
@@ -118,12 +108,9 @@ async def update_workout(
     Returns a **404** if the workout is unavailable.
     """
 
-    workout = await Workout.find_one(
-        Workout.user_id == current_user.id, 
-        Workout.id == workout_id
-    )
+    workout = await Workout.get(workout_id)
 
-    if not workout:
+    if not workout or not WorkoutPolicy.can_modify(current_user, workout):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
             detail="Workout not found"
@@ -133,29 +120,8 @@ async def update_workout(
     for field, value in update_data.items():
         setattr(workout, field, value)
     await workout.save()
-
-    exercise_ids = [e.exercise_id for e in workout.exercises]
-    exercises = await Exercise.find(
-        In(Exercise.id, exercise_ids)
-    ).to_list()
     
-    exercise_map = {ex.id: ex for ex in exercises}
-    
-    detailed_exercises = []
-    for e in workout.exercises:
-        ex_info = exercise_map.get(e.exercise_id)
-        if ex_info:
-            detailed_exercises.append({
-                **ex_info.model_dump(),
-                "exercise_id": e.exercise_id,
-                "order": e.order,
-                "sets": e.sets
-            })
-    
-    return ({
-        **workout.model_dump(),
-        "exercises": detailed_exercises
-    })
+    return await get_enriched_workout(current_user, workout)
 
 
 @router.delete("/{workout_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -168,12 +134,9 @@ async def delete_workout(
 
     Returns a **404** if workout is unavailable.
     """
-    workout = await Workout.find_one(
-        Workout.id == workout_id,
-        Workout.user_id == current_user.id
-    )
+    workout = await Workout.get(workout_id)
 
-    if not workout:
+    if not workout or not WorkoutPolicy.can_delete(current_user, workout):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
             detail="Workout not found"

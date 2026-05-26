@@ -87,6 +87,16 @@ class WorkoutReadBase(WorkoutBase):
         description="The ID of the user who owns this workout template."
     )
 
+    can_edit: bool = Field(
+        default=False,
+        description="Indicates if the authenticated user has permission to modify this workout."
+    )
+
+    can_delete: bool = Field(
+        default=False,
+        description="Indicates if the authenticated user has permission to permanently delete this workout."
+    )
+
     model_config = ConfigDict(
         from_attributes=True,
         populate_by_name=True

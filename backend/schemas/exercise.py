@@ -60,12 +60,12 @@ class ExerciseRead(ExerciseBase):
 
     can_edit: bool = Field(
         default=False,
-        description=""
+        description="Indicates if the authenticated user has permission to modify this exercise."
     )
 
     can_delete: bool = Field(
         default=False,
-        description=""
+        description="Indicates if the authenticated user has permission to permanently remove this exercise."
     )
 
     created_at: datetime

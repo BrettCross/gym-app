@@ -144,13 +144,15 @@ export default function Workouts() {
 
           </div>
           <div className='button-container'>
-            <button 
-              className='button-5' 
-              disabled={activeAction.type === "delete" && activeAction.id === workout.id}
-              onClick={() => handleDelete(workout.id)}
-            >
-              {activeAction.type === "delete" && activeAction.id === workout.id ? "Deleting..." : "Delete"}
-            </button>
+            {workout.can_delete && (
+              <button 
+                className='button-5' 
+                disabled={activeAction.type === "delete" && activeAction.id === workout.id}
+                onClick={() => handleDelete(workout.id)}
+                >
+                {activeAction.type === "delete" && activeAction.id === workout.id ? "Deleting..." : "Delete"}
+              </button>
+            )}
           </div>
         </div>
       ))}

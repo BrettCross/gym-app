@@ -134,10 +134,6 @@ async def update_exercise(
     Returns a **404** if the exercise is unavailable.
     """
 
-    # exercise = await Exercise.find_one(
-    #     Exercise.user_id == current_user.id,
-    #     Exercise.id == exercise_id
-    # )
     exercise = await Exercise.get(exercise_id)
 
     if not exercise or not ExercisePolicy.can_modify(current_user, exercise):

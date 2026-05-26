@@ -339,7 +339,9 @@ export default function WorkoutDetail() {
           ) : (
             <div className="container-h">
               <h2>{workout.name}</h2>
-              <button className='button-4' onClick={handleEditWorkout}>Edit Template</button>
+              {workout.can_edit && (
+                <button className='button-4' onClick={handleEditWorkout}>Edit Template</button>
+              )}
             </div>
           )}
         </header>

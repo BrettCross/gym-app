@@ -43,7 +43,8 @@ class ExercisePolicy:
     @staticmethod
     def can_modify(user: User, exercise: Exercise) -> bool:
         """
-        Determines if the user can update the exercise details.
+        User can modify the exercise details if they are an admin or they own it. 
+        Only an admin can modify an official exercise.
         """
 
         if exercise.is_official and user.role == UserRole.ADMIN:
@@ -53,7 +54,8 @@ class ExercisePolicy:
     @staticmethod
     def can_delete(user: User, exercise: Exercise) -> bool:
         """
-        Determines if a user can permanently remove an exercise.
+        User can delete the exercise if they are an admin or they own it. 
+        Only an admin can delete an official exercise.
         """
 
         if exercise.is_official and user.role == UserRole.ADMIN:
@@ -79,6 +81,31 @@ class WorkoutPolicy:
     def can_view(user: User, workout: Workout) -> bool:
         """
         User can see workout if they own it or they are an admin. 
+        """
+        return user.role == UserRole.ADMIN or workout.user_id == user.id
+
+    @staticmethod
+    def get_read_filter(user: User) -> dict:
+        """
+        Returns a MongoDB filter for workouts.
+        Admins receive an empty filter (all access), 
+        while users are restricted to their own ID.
+        """
+        if user.role == UserRole.ADMIN:
+            return {}
+        return {"user_id": user.id}
+
+    @staticmethod
+    def can_modify(user: User, workout: Workout) -> bool:
+        """
+        User can modify the workout if they own it.
+        """
+        return workout.user_id == user.id
+    
+    @staticmethod
+    def can_delete(user: User, workout: Workout) -> bool:
+        """
+        User can delete the workout if they own it or they are an admin.
         """
         return user.role == UserRole.ADMIN or workout.user_id == user.id
 
