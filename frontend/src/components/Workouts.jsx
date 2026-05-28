@@ -144,6 +144,7 @@ export default function Workouts() {
 
           </div>
           <div className='button-container'>
+            {/* Edit Workout */}
             {workout.can_delete && (
               <button 
                 className='button-5' 

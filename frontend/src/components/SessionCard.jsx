@@ -5,7 +5,9 @@
  * a preview of the exercises performed.
  */
 
-export default function SessionCard({ session, showDelete, onDelete }) {
+import { Link } from 'react-router-dom';
+
+export default function SessionCard({ session, onEdit, onDelete }) {
 
   // Aggregate total sets across all exercises in the session
   const totalSets = session.exercises.reduce(
@@ -34,7 +36,9 @@ export default function SessionCard({ session, showDelete, onDelete }) {
   return (
     <div key={session.id} className="result-container">
       <div className="">
-        <h3>{session.workout_name}</h3>
+        <Link to={`/sessions/${session.id}`}>
+          <h3>{session.workout_name}</h3>
+        </Link>
         <h5>{formattedDate}</h5>
         <h5>{totalSets} sets | volume: {totalVolume.toLocaleString()}lbs</h5>
       </div>
@@ -51,9 +55,21 @@ export default function SessionCard({ session, showDelete, onDelete }) {
           <span>and {session.exercises.length - 3} more...</span>
         )}
       </div>
-      {showDelete &&(
+      {session.can_edit &&(
         <button 
-          className="button-5" onClick={() => onDelete?.(session.id)}>X</button>
+          className="button-4" 
+          onClick={() => onEdit(session.id)}
+        >
+          Edit
+        </button>
+      )}
+      {session.can_delete &&(
+        <button 
+          className="button-5" 
+          onClick={() => onDelete(session.id)}
+        >
+          X
+        </button>
       )}
     </div>
   );

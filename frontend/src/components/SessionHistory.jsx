@@ -11,8 +11,11 @@
 import { useEffect, useState } from "react";
 import SessionCard from "./SessionCard";
 import apiService from "../utils/apiService";
+import { useNavigate } from "react-router-dom";
 
 export default function SessionHistory() {
+  const navigate = useNavigate();
+  
   const [sessions, setSessions] = useState([]);
   const [error, setError] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -33,6 +36,17 @@ export default function SessionHistory() {
     };
     fetchData();
   }, []);
+
+  /**
+ * Handler: Navigates to the session detail page and signals 
+ * that the component should initialize in edit mode.
+ * @param {string} sessionID - The UUID of the session to edit.
+ */
+const handleEdit = (sessionID) => {
+  navigate(`/sessions/${sessionID}`, { 
+    state: { editMode: true } 
+  });
+};
 
   /**
    * Handler: Deletes a specific session.
@@ -82,7 +96,7 @@ export default function SessionHistory() {
             <SessionCard 
               key={s.id} 
               session={s} 
-              showDelete={true} 
+              onEdit={handleEdit}
               onDelete={handleDelete} 
               disabled={isDeleting}
             />

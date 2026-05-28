@@ -11,6 +11,7 @@ import RegisterForm from './components/RegisterForm'
 import WorkoutDetail from './components/WorkoutDetail'
 import ActiveSession from './components/ActiveSession'
 import SessionHistory from './components/SessionHistory'
+import SessionDetail from './components/SessionDetail'
 import { useAuth } from './context/AuthContext'
 import apiService from './utils/apiService'
 
@@ -62,6 +63,7 @@ function App() {
             <Route path='/workouts/:id' element={<WorkoutDetail />} />
             <Route path='/session/:sessionID' element={<ActiveSession />} />
             <Route path='/sessions/' element={<SessionHistory />} />
+            <Route path='/sessions/:id' element={<SessionDetail />} />
           </Route>
         ) : (
           <Route path='*' element={<Navigate to='/login' />} />
