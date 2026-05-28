@@ -11,6 +11,7 @@ from backend.models.user import User
 from backend.models.workout import Workout
 from backend.schemas.session import SessionCreate, SessionRead, SessionUpdate
 from backend.utils import auth
+from backend.utils.policies import SessionPolicy
 
 
 router = APIRouter()
@@ -97,11 +98,18 @@ async def list_sessions(
     """
     Retrieve all of the sessions for the authenticated user sorted by most recent.
     """
-    sessions = await Session.find(
-        Session.user_id == current_user.id
-    ).sort(-Session.start_time).to_list()
 
-    return sessions
+    auth_filter = SessionPolicy.get_read_filter(current_user)
+    sessions = await Session.find(auth_filter).sort(-Session.start_time).to_list()
+    
+    return [
+        SessionRead(
+            **s.model_dump(),
+            can_edit=SessionPolicy.can_modify(current_user, s),
+            can_delete=SessionPolicy.can_delete(current_user, s)
+        )
+        for s in sessions
+    ]
 
 
 # Read recent Sessions
@@ -112,11 +120,19 @@ async def list_recent_sessions(
     """
     Retrieve the 3 most recent sessions for the authenticated user's dashboard sorting my most recent.
     """
-    sessions = await Session.find(
-        Session.user_id == current_user.id
-    ).sort(-Session.start_time).limit(3).to_list()
-    
-    return sessions
+
+    auth_filter = SessionPolicy.get_read_filter(current_user)
+
+    sessions = await Session.find(auth_filter).sort(-Session.start_time).limit(3).to_list()
+
+    return [
+        SessionRead(
+            **s.model_dump(),
+            can_edit=SessionPolicy.can_modify(current_user, s),
+            can_delete=SessionPolicy.can_delete(current_user, s)
+        )
+        for s in sessions
+    ]
 
 
 # Read Session by ID - backend use
@@ -132,17 +148,19 @@ async def read_session(
     Returns a **404** if the session is unavailable. 
     """
     
-    session = await Session.find_one(
-        Session.id == session_id,
-        Session.user_id == current_user.id
-    )
-    if not session:
+    session = await Session.get(session_id)
+
+    if not session or not SessionPolicy.can_view(current_user, session):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
             detail="Session not found"
         )
 
-    return session
+    return SessionRead(
+        **session.model_dump(),
+        can_edit=SessionPolicy.can_modify(current_user, session),
+        can_delete=SessionPolicy.can_delete(current_user, session)
+    )
 
 
 # Update Session
@@ -157,13 +175,10 @@ async def update_session(
 
     Used to finalize an active session.
     """
-    
-    session = await Session.find_one(
-        Session.id == session_id,
-        Session.user_id == current_user.id
-    )
 
-    if not session:
+    session = await Session.get(session_id)
+
+    if not session or not SessionPolicy.can_modify(current_user, session):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found"
@@ -212,7 +227,11 @@ async def update_session(
     
     session.updated_at = datetime.now(timezone.utc)
     await session.save()
-    return session
+    return SessionRead(
+        **session.model_dump(),
+        can_edit=SessionPolicy.can_modify(current_user, session),
+        can_delete=SessionPolicy.can_delete(current_user, session)
+    )
 
 
 # Delete Session
@@ -226,12 +245,10 @@ async def delete_session(
 
     Returns a **404** if session is unavailable.
     """
-    session = await Session.find_one(
-        Session.id == session_id,
-        Session.user_id == current_user.id
-    )
+    
+    session = await Session.get(session_id)
 
-    if not session:
+    if not session or not SessionPolicy.can_delete(current_user, session):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
             detail="Session not found"

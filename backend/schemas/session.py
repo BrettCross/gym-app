@@ -62,6 +62,16 @@ class SessionRead(SessionBase):
     end_time: datetime | None = None
     exercises: list[SessionExerciseRead] = Field(default_factory=list)
 
+    can_edit: bool = Field(
+        default=False,
+        descirption="Whether user can modify this session"
+    )
+
+    can_delete: bool = Field(
+        default=False,
+        descirption="Whether user can delete this session"
+    )
+
     model_config = ConfigDict(
         from_attributes=True,
         populate_by_name=True

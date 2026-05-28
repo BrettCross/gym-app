@@ -111,7 +111,42 @@ class WorkoutPolicy:
 
 
 class SessionPolicy:
-    pass
+    """
+    Authorization logic for the Session resource
+    Ensures data integrity of User-created content.
+    """
+
+    @staticmethod
+    def can_view(user: User, session: Session) -> bool:
+        """
+        User can see workout if they own it or they are an admin. 
+        """
+        return user.role == UserRole.ADMIN or session.user_id == user.id
+
+    @staticmethod
+    def get_read_filter(user: User) -> dict:
+        """
+        Returns a MongoDB filter for sessions.
+        Admins receive an empty filter (all access), 
+        while users are restricted to their own ID.
+        """
+        if user.role == UserRole.ADMIN:
+            return {}
+        return {"user_id": user.id}
+
+    @staticmethod
+    def can_modify(user: User, session: Session) -> bool:
+        """
+        User can modify the session if they own it.
+        """
+        return session.user_id == user.id
+
+    @staticmethod
+    def can_delete(user: User, session: Session) -> bool:
+        """
+        User can delete the session if they own it or they are an admin.
+        """
+        return user.role == UserRole.ADMIN or session.user_id == user.id
 
 
 class UserPolicy:
