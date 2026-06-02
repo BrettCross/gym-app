@@ -30,13 +30,20 @@ export function AuthProvider({ children }) {
    * Clears all local state and tokens. Wrapped in useCallback to provide 
    * a stable reference for other hooks and event listeners.
    */
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     // TODO: use cookie instead of local storage
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    setIsLoggedIn(false);
-    setUser(null);
-    navigate('/login')
+    try {
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (refreshToken) {
+        await apiService.post("/logout", { refresh_token: refreshToken });
+      }
+    } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      setIsLoggedIn(false);
+      setUser(null);
+      navigate('/login')
+    }
   }, [navigate]);
 
   /**

@@ -1,12 +1,13 @@
-from datetime import timedelta
+# from datetime import timedelta
 from typing import Annotated
 
 import jwt
 from beanie.operators import Or
 from fastapi import Depends, APIRouter, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
+from jwt.exceptions import InvalidTokenError
 
+from backend.models.refresh_token import RefreshToken
 from backend.models.user import User 
 from backend.schemas.token import Token, TokenRefreshRequest
 from backend.schemas.user import UserCreate, UserRead
@@ -31,9 +32,12 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    access_token = auth.create_access_token(user)
+    refresh_token = await auth.create_refresh_token(user)
+
     return Token(
-        access_token=auth.create_access_token(user),
-        refresh_token=auth.create_refresh_token(user.username),
+        access_token=access_token,
+        refresh_token=refresh_token,
         token_type="bearer"
     )
 
@@ -41,10 +45,7 @@ async def login(
 @router.post("/refresh", response_model=Token)
 async def refresh(refresh_data: TokenRefreshRequest):
     """
-    Implements refresh token rotation.
-
-    Decodes the refresh token, validates its JTI and type, and issues
-    a brand-new pair of tokens to maintain a secure, seamless session.
+    
     """
     try:
         payload = jwt.decode(
@@ -56,14 +57,28 @@ async def refresh(refresh_data: TokenRefreshRequest):
         # Security: In a production environment, check if payload['jti'] is blacklisted here
         # if await is_jti_blacklisted(payload.get("jti")):
         #     raise HTTPException(status_code=401, detail="Token revoked")
+        jti = payload.get("jti")
+        username = payload.get("sub")
+        token_type = payload.get("type")
 
-        if payload.get("sub") is None or payload.get("type") != "refresh":
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        if not jti or username is None or token_type != "refresh":
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+        token_doc = await RefreshToken.find_one(RefreshToken.jti == jti)
+
+        if not token_doc or token_doc.revoked:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token revoked or expired")
         
-        user = await auth.get_user(payload.get("sub"))
+        token_doc.revoked = True
+        await token_doc.save()
+        
+        user = await auth.get_user(username)
+
+        new_access_token = auth.create_access_token(user)
+        new_refresh_token = await auth.create_refresh_token(user)
         return Token(
-            access_token=auth.create_access_token(user),
-            refresh_token=auth.create_refresh_token(user.username),
+            access_token=new_access_token,
+            refresh_token=new_refresh_token,
             token_type="bearer"
         )
         
@@ -103,3 +118,33 @@ async def register_user(user_in: UserCreate):
 
     await new_user.insert()
     return new_user
+
+
+@router.post("/logout")
+async def logout(refresh_data: TokenRefreshRequest):
+    """
+    Revokes a refresh token to end the session.
+    """
+    try:
+        # Decode to get the JTI without verifying expiration (in case it just expired)
+        payload = jwt.decode(
+            refresh_data.refresh_token, 
+            auth.SECRET_KEY, 
+            algorithms=[auth.ALGORITHM],
+            options={"verify_exp": False} 
+        )
+        
+        jti = payload.get("jti")
+        if not jti:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
+
+        # Find the token and mark it revoked
+        token_doc = await RefreshToken.find_one(RefreshToken.jti == jti)
+        if token_doc:
+            token_doc.revoked = True
+            await token_doc.save()
+            
+        return {"detail": "Successfully logged out"}
+
+    except InvalidTokenError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")

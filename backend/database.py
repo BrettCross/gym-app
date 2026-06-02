@@ -1,12 +1,13 @@
 import os
 
-from motor.motor_asyncio import AsyncIOMotorClient#, AsyncIOMotorDatabase
+from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 
 from backend.models.user import User
 from backend.models.exercise import Exercise
 from backend.models.workout import Workout
 from backend.models.session import Session
+from backend.models.refresh_token import RefreshToken
 
 
 async def init_db(uri: str | None = None) -> None:
@@ -34,7 +35,8 @@ async def init_db(uri: str | None = None) -> None:
             User, 
             Exercise, 
             Workout, 
-            Session
+            Session,
+            RefreshToken
         ]
     )
     

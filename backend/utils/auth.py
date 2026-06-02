@@ -9,6 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pwdlib import PasswordHash
 
+from backend.models.refresh_token import RefreshToken
 from backend.models.user import User, UserRole
 from backend.schemas.token import TokenData
 
@@ -54,14 +55,25 @@ async def authenticate_user(username: str, password: str) -> User | None:
 
 
 # --- Token Logic ---
-def create_refresh_token(username: str) -> str:
+async def create_refresh_token(user: User) -> str:
     """
     Generates a long-lived refresh token with a unique ID (JTI) for rotation.
     """
+    jti = str(uuid.uuid4())
     expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+
+    db_token = RefreshToken(
+        jti=jti,
+        user_id=user.id,
+        username=user.username,
+        expires_at=expire
+    )
+
+    await db_token.insert()
+
     to_encode = {
-        "sub": username,
-        "jti": str(uuid.uuid4()),
+        "sub": user.username,
+        "jti": jti,
         "exp": expire,
         "type": "refresh"
     }
