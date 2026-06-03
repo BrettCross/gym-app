@@ -1,7 +1,7 @@
 /**
- * Exercises.jsx
+ * @file Exercises.jsx
  * 
- * Manages the exercise library. 
+ * @description Manages the exercise library. 
  * Features:
  * - CRUD operations for exercise definitions.
  * - Modal-based form for creating and editing exercises.
@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from 'react'
 import apiService from '@utils/apiService'
 import { useAuth } from '../context/AuthContext';
+import ExerciseCard from './ExerciseCard';
 
 /**
  * Main Exercises Page Component
@@ -17,26 +18,19 @@ import { useAuth } from '../context/AuthContext';
  */
 export default function Exercises() {
   const { user } = useAuth();
-  const currentUserId = user?.id;
   
   const [exercises, setExercises] = useState([]);
   const [exerciseToEdit, setExerciseToEdit] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const [searchTerm, setSearchTerm] = useState("");
+  const [uiState, setUiState] = useState({ loading: true, error: null, search: "", tab: "" });
   const [libraryTypes, setLibraryTypes] = useState([]);
-  const [activeTab, setActiveTab] = useState("");
 
-
-  // Ref for controlling the <dialog> element
   const dialogRef = useRef(null);
 
   /**
    * Opens the create/edit modal.
    * @param {Object|null} exercise - The exercise to edit, or null to create new.
    */
-  const handleShowForm = (exercise) => {
+  const handleEdit = (exercise) => {
     setExerciseToEdit(exercise);
     dialogRef.current.showModal();
   };
@@ -48,12 +42,19 @@ export default function Exercises() {
   const handleCloseAndRefresh = (updatedExercise, action) => {
     dialogRef.current.close();
     setExerciseToEdit(null);
+
+    const exerciseWithPermissions = {
+      ...updatedExercise,
+      can_edit: true,
+      can_delete: true
+    };
+
     if (action === "edit") {
       setExercises(exercises.map( ex => 
-        ex.id === updatedExercise.id ? updatedExercise : ex
+        ex.id === updatedExercise.id ? exerciseWithPermissions : ex
       ));
     } else {
-      setExercises([...exercises, updatedExercise])
+      setExercises(prev => [...prev, exerciseWithPermissions]);
     }
   };
   
@@ -64,16 +65,36 @@ export default function Exercises() {
       setExercises(exercises.filter(ex => ex.id !== exerciseID));
     } catch (err) {
       const message = err.response?.data?.detail || "Failed to delete exercise. Try again."
-      setError(message);
+      setUiState(prev => ({ ...prev, error: message }));
     }
   };
+
+  /**
+ * Promotes a community exercise to 'official' status.
+ * Only accessible by users with the 'admin' role.
+ */
+const handleVerify = async (exerciseID) => {
+  try {
+    // Hits the new endpoint in routes/admin.py
+    const response = await apiService.patch(`/admin/exercises/${exerciseID}/verify`);
+    
+    // Update local state: find the exercise and flip the is_official flag
+    setExercises(prev => prev.map(ex => 
+      ex.id === exerciseID ? { ...ex, is_official: true } : ex
+    ));
+    
+    console.log(response.data.detail);
+  } catch (err) {
+    const message = err.response?.data?.detail || "Failed to promote exercise.";
+    setUiState(prev => ({ ...prev, error: message }));
+  }
+};
   
   /**
    * Fetch library on component mount
    */
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
+    (async () => {
       try {
         const [exResponse, libResponse] = await Promise.all([
           apiService.get('/exercises'),
@@ -81,37 +102,25 @@ export default function Exercises() {
         ]);
         setExercises(exResponse.data);
         setLibraryTypes(libResponse.data);
-
-        // default to 'all' enum value
-        if (libResponse.data.length > 0) {
-          setActiveTab(libResponse.data[0]);
-        }
+        setUiState(prev => ({ ...prev, tab: libResponse.data[0], loading: false }));
       } catch (err) {
         const message = err.response?.data?.detail || "Failed to load exercises. Try again."
-        setError(message);
-      } finally {
-        setIsLoading(false);
+        setUiState(prev => ({ ...prev, error: message, loading: false }));
       }
-    };
-    fetchData();
+    })();
   }, []);
 
   // Filter exercises based on search term
   const filteredExercises = exercises.filter(ex => {
-    const isOwner = ex.user_id === currentUserId;
-
-    if (activeTab === 'official' && isOwner) return false;
-    if (activeTab === 'personal' && !isOwner) return false;
-
-    const term = searchTerm.toLowerCase();
-    return (
-      ex.name.toLowerCase().includes(term) ||
-      ex.muscle_group.some(m => m.toLowerCase().includes(term))
-    )
+    const matchesTab = uiState.tab === 'all' || 
+      (uiState.tab === 'official' && ex.is_official) || 
+      (uiState.tab === 'personal' && ex.user_id === user?.id);
+    const matchesSearch = ex.name.toLowerCase().includes(uiState.search.toLowerCase());
+    return matchesTab && matchesSearch;
   });
 
-  if (isLoading) return <div className="loading">Loading exercise library...</div>;
-  if (error) return <div className="error-banner">{error}</div>;
+  if (uiState.loading) return <div>Loading...</div>;
+  if (uiState.error) return <div className="error-banner">{uiState.error}</div>;
 
   return (
     <>
@@ -127,7 +136,7 @@ export default function Exercises() {
     <div className='container-v'>
       <div className='container-h'>
         <h4>All Exercises</h4>
-        <button className='button-3' onClick={() => handleShowForm(null)}>Create Exercise</button>
+        <button className='button-3' onClick={() => handleEdit(null)}>Create Exercise</button>
       </div>
 
       {/* Search Input */}
@@ -136,8 +145,8 @@ export default function Exercises() {
           type="text" 
           placeholder="Search by exercise name or muscle group..." 
           className="search-input"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={uiState.search}
+          onChange={(e) => setUiState(prev => ({ ...prev, search: e.target.value }))}
         />
       </div>
 
@@ -146,8 +155,8 @@ export default function Exercises() {
         {libraryTypes.map((tab) => (
           <button
             key={tab}
-            className={`tab-button ${activeTab === tab ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab)}
+            className={`tab-button ${uiState.tab === tab ? 'active' : ''}`}
+            onClick={() => setUiState(prev => ({ ...prev, tab: tab }))}
           >
             {tab}
           </button>
@@ -156,19 +165,23 @@ export default function Exercises() {
 
       {/* Exercise List Rendering */}
       {filteredExercises.length > 0 ? (
-        filteredExercises.map((exercise) => (
+        filteredExercises.map((ex) => (
           <ExerciseCard
-            key={exercise.id}
-            exercise={exercise}
-            // canManage={user?.role === "admin" || exercise.user_id === currentUserId}
-            onEdit={() => handleShowForm(exercise)}
-            onDelete={() => handleDelete(exercise.id)}
+            key={ex.id}
+            exercise={ex}
+            actions={
+              <>
+                {ex.can_edit && <button className="button-4" onClick={() => handleEdit(ex)}>Edit</button>}
+                {ex.can_delete && <button className="button-5" onClick={() => handleDelete(ex.id)}>Delete</button>}
+                {user?.role === 'admin' && !ex.is_official && <button onClick={() => handleVerify(ex.id)}>Verify</button>}
+              </>
+            }
           />
         ))
       ) : (
         <EmptyState
-          activeTab={activeTab}
-          onAction={() => handleShowForm(null)}
+          activeTab={uiState.tab}
+          onAction={() => handleEdit(null)}
         />
       )}
     </div>
@@ -262,40 +275,6 @@ function ExerciseForm({ onExerciseAdded, exerciseToEdit }) {
     </form>
   );
 }
-
-/**
- * ExerciseCard Component
- * Visual representation of an individual exercise item
- * 
- * @param {Object} props
- * @param {Object} props.exercise - The exercise data object.
- * @param {Function} props.onEdit - Callback to trigger edit modal
- * @param {Function} props.onDelete - Callback to trigger delete logic
- */
-function ExerciseCard({ exercise, onEdit, onDelete }) {
-  return (
-    <div className='result-container'>
-      <div className='result'>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <h3 className='result-title'>{exercise.name}</h3>
-          {exercise.is_official && <span className="badge-system">✅</span>}
-        </div>
-        <h5 className='result-desc'>
-          {exercise.muscle_group.join(", ")} | {exercise.equipment.join(", ")} | {exercise.exercise_type}
-        </h5>
-      </div>
-      <div className='button-container'>
-        {exercise.can_edit && (
-            <button className='button-4' onClick={onEdit}>Edit</button>
-        )}
-        {exercise.can_delete && (
-            <button className='button-5' onClick={onDelete}>Delete</button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 
 /**
  * EmptyState Component

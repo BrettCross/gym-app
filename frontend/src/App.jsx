@@ -14,10 +14,23 @@ import SessionHistory from './components/SessionHistory'
 import SessionDetail from './components/SessionDetail'
 import { useAuth } from './context/AuthContext'
 import apiService from './utils/apiService'
+import UserManagement from './components/UserManagement'
 
 
-function App() {
-  // Grab the state directly from your new hook!
+function AdminRoute({ children }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) return <div>Loading...</div>;
+
+  // redirect non-admins
+  if (!user || user.role !== 'admin') {
+    return <Navigate to="/" replace />
+  }
+
+  return children;
+}
+
+export default function App() {
   const { isLoggedIn, isLoading } = useAuth();
   const [isOnline, setIsOnline] = useState(true);
 
@@ -42,9 +55,8 @@ function App() {
     return () => clearInterval(interval);
   }, [isLoggedIn]);
 
-  // Handle the "flicker" while the API check is running
   if (isLoading) {
-    return <div>Loading your gym data...</div>; // Or a nice spinner
+    return <div>Loading your gym data...</div>; 
   }
 
   return (
@@ -64,6 +76,14 @@ function App() {
             <Route path='/session/:sessionID' element={<ActiveSession />} />
             <Route path='/sessions/' element={<SessionHistory />} />
             <Route path='/sessions/:id' element={<SessionDetail />} />
+            <Route 
+              path='/admin/users' 
+              element={
+                <AdminRoute>
+                  <UserManagement />
+                </AdminRoute>
+              } 
+            />
           </Route>
         ) : (
           <Route path='*' element={<Navigate to='/login' />} />
@@ -74,5 +94,3 @@ function App() {
     </>
   )
 }
-
-export default App

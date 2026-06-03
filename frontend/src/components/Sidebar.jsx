@@ -8,9 +8,9 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
-// Pass 'className' as a prop so the Layout can style the sidebar's position
 export default function Sidebar({ className }) {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   return (
     <nav className={`${className} nav-sidebar`}>
@@ -30,7 +30,18 @@ export default function Sidebar({ className }) {
         <li>
           <NavLink to="/sessions">Sessions</NavLink>
         </li>
+        
+        {isAdmin && (
+          <div className="admin-nav-group">
+            <hr className="nav-divider" />
+            <span className="nav-label">Admin</span>
+            <li>
+              <NavLink to="/admin/users">User Management</NavLink>
+            </li>
+          </div>
+        )}
       </ul>
+      
       
       <div className="sidebar-footer">
         <button className="button-5" onClick={logout}>
