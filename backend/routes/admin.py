@@ -1,5 +1,3 @@
-from typing import Annotated
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from beanie import PydanticObjectId
 
@@ -15,9 +13,7 @@ router = APIRouter(
 )
 
 @router.get("/users", response_model=list[UserRead])
-async def read_all_users(
-    admin: Annotated[User, Depends(require_role(UserRole.ADMIN))],
-):
+async def read_all_users():
     """
     Returns a complete list of users.
     """
@@ -26,10 +22,7 @@ async def read_all_users(
 
 
 @router.patch("/exercises/{exercise_id}/verify")
-async def verify_exercise(
-    admin: Annotated[User, Depends(require_role(UserRole.ADMIN))],
-    exercise_id: PydanticObjectId
-):
+async def verify_exercise(exercise_id: PydanticObjectId):
     """
     Promotes a user-contributed exercise to the Official library.
     """
@@ -39,10 +32,7 @@ async def verify_exercise(
 
 
 @router.delete("/users/{user_id}")
-async def delete_user(
-    admin: Annotated[User, Depends(require_role(UserRole.ADMIN))],
-    user_id: PydanticObjectId
-    ):
+async def delete_user(user_id: PydanticObjectId):
     """
     Deletes a user from
     """
