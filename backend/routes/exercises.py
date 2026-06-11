@@ -1,11 +1,7 @@
-from datetime import datetime
-from enum import Enum
 from typing import Annotated
 
 from beanie import PydanticObjectId
-from beanie.operators import In
 from fastapi import Depends, APIRouter, HTTPException, status
-import httpx
 
 from backend.models.exercise import Exercise
 from backend.models.user import User
@@ -21,12 +17,11 @@ router = APIRouter()
 @router.get("/libraries", response_model=list[str])
 async def get_library_types():
     """
-    
+    Retrieves the available categories derived from the ExerciseLibrary Enum.
     """
     return [lib.value for lib in ExerciseLibrary]
 
 
-# Create Exercise
 @router.post("", response_model=ExerciseRead, status_code=status.HTTP_201_CREATED)
 async def create_exercise(
     current_user: Annotated[User, Depends(auth.get_current_active_user)],
@@ -36,6 +31,7 @@ async def create_exercise(
     Create a new exercise template for the authenticated user.
     Checks for duplicates names to prevent redundant templates.
     """
+
     exercise_exists = await Exercise.find_one(
         Exercise.user_id == PydanticObjectId(current_user.id),
         Exercise.name == exercise.name
@@ -56,7 +52,6 @@ async def create_exercise(
     return new_exercise
 
 
-# Read exercises with optional filters
 @router.get("", response_model=list[ExerciseRead], status_code=status.HTTP_200_OK)
 async def list_exercises(
     current_user: Annotated[User, Depends(auth.get_current_active_user)],
@@ -84,7 +79,6 @@ async def list_exercises(
     # sort official exercises before user's exercises
     exercises.sort(key=lambda x: (not x.is_official, x.name))
 
-    # include edit/delete permissions for frontend
     results = []
     for ex in exercises:
         out = ExerciseRead.model_validate(ex)
@@ -95,7 +89,6 @@ async def list_exercises(
     return results
 
 
-# Read Exercise with ID - backend use
 @router.get("/{exercise_id}", response_model=ExerciseRead, status_code=status.HTTP_200_OK)
 async def read_exercise(
     current_user: Annotated[User, Depends(auth.get_current_active_user)],
@@ -104,10 +97,7 @@ async def read_exercise(
     """
     Fetch a single exercise by its unique ID for the authenticated user.
     """
-    # exercise = await Exercise.find_one(
-    #     Exercise.user_id == current_user.id,
-    #     Exercise.id == exercise_id
-    # )
+    
     exercise = await Exercise.get(exercise_id)
     if not exercise or not ExercisePolicy.can_view(current_user, exercise):
         raise HTTPException(
@@ -118,7 +108,6 @@ async def read_exercise(
     return exercise
 
 
-# Update Exercise
 @router.put("/{exercise_id}", response_model=ExerciseRead, status_code=status.HTTP_200_OK)
 async def update_exercise(
     current_user: Annotated[User, Depends(auth.get_current_active_user)],
@@ -153,7 +142,6 @@ async def update_exercise(
     return exercise
 
 
-# Delete Exercise
 @router.delete("/{exercise_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_exercise(
     current_user: Annotated[User, Depends(auth.get_current_active_user)],

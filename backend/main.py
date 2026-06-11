@@ -12,16 +12,18 @@ from backend.database import init_db
 from backend.routes.router import api_router
 
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     Handles application startup and shutdown events.
     """
     # Initialize MongoDB and Beanie
-    mongo_uri = os.getenv("MONGO_URI")
-    if not mongo_uri:
-        raise ValueError("MONGO_URI environment variable is not set!")
+    user = os.getenv("MONGO_USER")
+    password = os.getenv("MONGO_PASS")
+    host = os.getenv("MONGO_HOST")
+    mongo_uri = f"mongodb+srv://{user}:{password}@{host}"
+    if not user or not password or not host:
+        raise ValueError("An environment variable is not set!")
 
     # init_db handles connection and Beanie initialization
     await init_db(uri=mongo_uri)
@@ -39,10 +41,11 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware - use env variables for production
+raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost")
+origins = [origin.strip() for origin in raw_origins.split(",")]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  
+    allow_origins=origins,  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

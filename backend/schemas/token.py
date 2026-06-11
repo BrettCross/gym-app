@@ -5,6 +5,7 @@ class Token(BaseModel):
     Schema for the successful authentication response.
     Follows the OAuth2 standard format.
     """
+    
     access_token: str = Field(
         ...,
         description="Short-lived JWT access token"

@@ -78,7 +78,10 @@ class SessionRead(SessionBase):
     )
 
 class SessionUpdate(BaseModel):
-    """Used for updating an active or finished session. All fields are optional."""
+    """
+    Used for updating an active or finished session. All fields are optional.
+    """
+    
     workout_name: str | None = None
     exercises: list[SessionExerciseBase] | None = None
     end_time: datetime | None = None

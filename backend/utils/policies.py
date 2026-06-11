@@ -19,6 +19,7 @@ class ExercisePolicy:
 
         if exercise.is_official:
             return True
+        
         return user.role == UserRole.ADMIN or exercise.user_id == user.id
     
     @staticmethod
@@ -27,13 +28,13 @@ class ExercisePolicy:
         Returns a MongoDB filter based on user role and requested library.
         Encapsulates the 'Official vs Personal' visibility logic.
         """
-        # Admin bypass: Admins can see everything regardless of library filter
+
         if user.role == UserRole.ADMIN:
             return {}
 
-        # Standard User Logic
         if library == ExerciseLibrary.PERSONAL:
             return {"user_id": user.id}
+        
         if library == ExerciseLibrary.OFFICIAL:
             return {"is_official": True}
         
@@ -49,6 +50,7 @@ class ExercisePolicy:
 
         if exercise.is_official and user.role == UserRole.ADMIN:
             return True
+        
         return user.role == UserRole.ADMIN or exercise.user_id == user.id
 
     @staticmethod
@@ -60,15 +62,8 @@ class ExercisePolicy:
 
         if exercise.is_official and user.role == UserRole.ADMIN:
             return True
+        
         return user.role == UserRole.ADMIN or exercise.user_id == user.id
-
-    # @staticmethod
-    # def can_verify(user: User) -> bool:
-    #     """
-    #     Only admins can promote a user-created exercise to "Official" status.
-    #     """
-
-    #     return user.role == UserRole.ADMIN
 
 
 class WorkoutPolicy:
@@ -82,17 +77,21 @@ class WorkoutPolicy:
         """
         User can see workout if they own it or they are an admin. 
         """
+
         return user.role == UserRole.ADMIN or workout.user_id == user.id
 
     @staticmethod
     def get_read_filter(user: User) -> dict:
         """
         Returns a MongoDB filter for workouts.
-        Admins receive an empty filter (all access), 
-        while users are restricted to their own ID.
+
+        Admins receive an empty filter (all access).
+        Users are restricted to their own ID.
         """
+
         if user.role == UserRole.ADMIN:
             return {}
+        
         return {"user_id": user.id}
 
     @staticmethod
@@ -100,6 +99,7 @@ class WorkoutPolicy:
         """
         User can modify the workout if they own it.
         """
+
         return workout.user_id == user.id
     
     @staticmethod
@@ -107,6 +107,7 @@ class WorkoutPolicy:
         """
         User can delete the workout if they own it or they are an admin.
         """
+
         return user.role == UserRole.ADMIN or workout.user_id == user.id
 
 
@@ -121,17 +122,21 @@ class SessionPolicy:
         """
         User can see workout if they own it or they are an admin. 
         """
+
         return user.role == UserRole.ADMIN or session.user_id == user.id
 
     @staticmethod
     def get_read_filter(user: User) -> dict:
         """
         Returns a MongoDB filter for sessions.
-        Admins receive an empty filter (all access), 
-        while users are restricted to their own ID.
+
+        Admins receive an empty filter (all access).
+        Users are restricted to their own ID.
         """
+
         if user.role == UserRole.ADMIN:
             return {}
+        
         return {"user_id": user.id}
 
     @staticmethod
@@ -139,6 +144,7 @@ class SessionPolicy:
         """
         User can modify the session if they own it.
         """
+
         return session.user_id == user.id
 
     @staticmethod
@@ -146,6 +152,7 @@ class SessionPolicy:
         """
         User can delete the session if they own it or they are an admin.
         """
+        
         return user.role == UserRole.ADMIN or session.user_id == user.id
 
 

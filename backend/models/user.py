@@ -43,5 +43,13 @@ class User(Document):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+    async def save(self, *args, **kwargs):
+        """
+        Overriding the save method to automatically update the timestamp.
+        """
+        
+        self.updated_at = datetime.now(timezone.utc)
+        return await super().save(*args, **kwargs)
+
     class Settings:
         name = "users" 

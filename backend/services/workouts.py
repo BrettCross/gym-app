@@ -7,7 +7,9 @@ from backend.schemas.workout import WorkoutDetailRead
 from backend.utils.policies import WorkoutPolicy
 
 async def get_enriched_workout(user: User, workout: Workout) -> WorkoutDetailRead:
-    # fetch all exercises in one database hit
+    """
+    Hydrates a Workout document with its associated Exercise definitions and permission flags.
+    """
     exercise_ids = [e.exercise_id for e in workout.exercises]
     exercises = await Exercise.find(
         In(Exercise.id, exercise_ids)

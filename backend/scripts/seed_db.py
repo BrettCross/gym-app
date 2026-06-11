@@ -1,7 +1,6 @@
 import json
 import asyncio
 import logging
-import os
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -14,6 +13,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
 logger = logging.getLogger(__name__)
 
 load_dotenv()
@@ -22,13 +22,11 @@ async def seed_exercises():
     """
     Main execution logic for seeding the Global Exercise Library.
     """
+
     try:
-        # 1. Initialize DB connection using app-standard logic
         await init_db()
         logger.info("Database connection initialized successfully.")
 
-        # 2. Locate and load the JSON seed file
-        # Uses Path for cross-platform compatibility (Windows/Linux)
         base_path = Path(__file__).resolve().parent.parent
         file_path = base_path / "scripts" / "seed_data.json"
 
@@ -41,17 +39,14 @@ async def seed_exercises():
         
         logger.info(f"Loaded {len(exercises_data)} exercises from seed file.")
 
-        # 3. Idempotent insertion logic
         count = 0
         for item in exercises_data:
-            # We specifically look for global exercises (user_id is None)
             exists = await Exercise.find_one(
                 Exercise.name == item["name"],
                 Exercise.user_id == SYSTEM_USER_ID
             )
 
             if not exists:
-                # user_id=None marks this as a system-wide global template
                 new_exercise = Exercise(**item, user_id=SYSTEM_USER_ID)
                 await new_exercise.insert()
                 count += 1
@@ -63,6 +58,7 @@ async def seed_exercises():
 
     except Exception as e:
         logger.error(f"Seeding failed with error: {e}")
+        
     finally:
         # Note: Beanie/Motor handles connection closing via the event loop
         logger.info("Seeding process finished.")

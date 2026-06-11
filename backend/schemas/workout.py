@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from beanie import PydanticObjectId
 from pydantic import BaseModel, ConfigDict, Field
 

@@ -38,6 +38,7 @@ async def get_user(username: str) -> str | None:
     """
     Fetches the full user document by username.
     """
+
     return await User.find_one(User.username == username)
     
 
@@ -46,6 +47,7 @@ async def authenticate_user(username: str, password: str) -> User | None:
     Validates User credentials.
     Returns the User document if successful, otherwise None.
     """
+
     user = await get_user(username)
     if not user:
         return None
@@ -59,6 +61,7 @@ async def create_refresh_token(user: User) -> str:
     """
     Generates a long-lived refresh token with a unique ID (JTI) for rotation.
     """
+
     jti = str(uuid.uuid4())
     expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
 
@@ -85,6 +88,7 @@ def create_access_token(user: User) -> str:
     Generates a JWT access token.
     Defaults to 15 minutes if no delta is provided.
     """
+
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode = {
         "sub": user.username,
@@ -117,6 +121,7 @@ async def get_current_user(
         if username is None or token_type != "access":
             raise credentials_exception
         token_data = TokenData(username=username, role=role)
+
     except InvalidTokenError:
         raise credentials_exception
 
@@ -133,6 +138,7 @@ async def get_current_active_user(
     """
     Final dependency to ensure user is active (and eventually check roles).
     """
+
     return current_user
 
 
@@ -141,6 +147,7 @@ def require_role(allowed_roles: list[UserRole]):
     Factory that creates a role-validation dependency.
     Accepts a list of roles to support multi-role access to complex endpoints.
     """
+    
     async def role_checker(
         current_user: Annotated[User, Depends(get_current_active_user)]
     ) -> User:

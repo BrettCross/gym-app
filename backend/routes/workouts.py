@@ -2,12 +2,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status, HTTPException
 from beanie import PydanticObjectId
-from beanie.operators import In
 
 from backend.models.user import User
-from backend.models.workout import Workout, WorkoutExercise, ExerciseSet
-from backend.schemas.workout import WorkoutCreate, WorkoutRead, WorkoutUpdate, WorkoutExerciseBase, WorkoutDetailRead, WorkoutExerciseDetail, SetSchema
-from backend.models.exercise import Exercise
+from backend.models.workout import Workout
+from backend.schemas.workout import WorkoutCreate, WorkoutRead, WorkoutUpdate, WorkoutDetailRead
 from backend.utils import auth
 from backend.utils.policies import WorkoutPolicy
 from backend.services.workouts import get_enriched_workout

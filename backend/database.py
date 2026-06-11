@@ -14,8 +14,13 @@ async def init_db(uri: str | None = None) -> None:
     """
     Initializes the MongoDB client and the Beanie ODM.
     """
+
     # Use provided URI or fallback to environment variable
-    target_uri = uri or os.getenv("MONGO_URI")
+    # target_uri = uri or os.getenv("MONGO_URI")
+    user = os.getenv("MONGO_USER")
+    password = os.getenv("MONGO_PASS")
+    host = os.getenv("MONGO_HOST")
+    target_uri = uri or f"mongodb+srv://{user}:{password}@{host}"
 
     if not target_uri:
         raise ValueError("MongoDB connection URI is missing!")

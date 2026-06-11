@@ -1,4 +1,3 @@
-# from datetime import timedelta
 from typing import Annotated
 
 import jwt
@@ -54,9 +53,6 @@ async def refresh(refresh_data: TokenRefreshRequest):
             algorithms=[auth.ALGORITHM]
         )
 
-        # Security: In a production environment, check if payload['jti'] is blacklisted here
-        # if await is_jti_blacklisted(payload.get("jti")):
-        #     raise HTTPException(status_code=401, detail="Token revoked")
         jti = payload.get("jti")
         username = payload.get("sub")
         token_type = payload.get("type")
@@ -126,7 +122,6 @@ async def logout(refresh_data: TokenRefreshRequest):
     Revokes a refresh token to end the session.
     """
     try:
-        # Decode to get the JTI without verifying expiration (in case it just expired)
         payload = jwt.decode(
             refresh_data.refresh_token, 
             auth.SECRET_KEY, 
@@ -138,7 +133,6 @@ async def logout(refresh_data: TokenRefreshRequest):
         if not jti:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
 
-        # Find the token and mark it revoked
         token_doc = await RefreshToken.find_one(RefreshToken.jti == jti)
         if token_doc:
             token_doc.revoked = True

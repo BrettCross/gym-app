@@ -52,5 +52,13 @@ class Exercise(Document):
         description="Timestamp of when the exercise was last updated."
     )
 
+    async def save(self, *args, **kwargs):
+        """
+        Overriding the save method to automatically update the timestamp.
+        """
+        
+        self.updated_at = datetime.now(timezone.utc)
+        return await super().save(*args, **kwargs)
+
     class Settings:
         name = "exercises"

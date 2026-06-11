@@ -16,7 +16,6 @@ from backend.utils.policies import SessionPolicy
 
 router = APIRouter()
 
-# Create Session
 @router.post("", response_model=SessionRead, status_code=status.HTTP_201_CREATED)
 async def create_session(
     current_user: Annotated[User, Depends(auth.get_current_active_user)],
@@ -90,7 +89,6 @@ async def create_session(
     return new_session
 
 
-# Read ALL Sessions
 @router.get("", response_model=list[SessionRead], status_code=status.HTTP_200_OK)
 async def list_sessions(
     current_user: Annotated[User, Depends(auth.get_current_active_user)]
@@ -112,7 +110,6 @@ async def list_sessions(
     ]
 
 
-# Read recent Sessions
 @router.get("/recent", response_model=list[SessionRead], status_code=status.HTTP_200_OK)
 async def list_recent_sessions(
     current_user: Annotated[User, Depends(auth.get_current_active_user)]
@@ -135,7 +132,6 @@ async def list_recent_sessions(
     ]
 
 
-# Read Session by ID - backend use
 @router.get("/{session_id}", response_model=SessionRead, status_code=status.HTTP_200_OK)
 async def read_session(
     current_user: Annotated[User, Depends(auth.get_current_active_user)],
@@ -163,7 +159,6 @@ async def read_session(
     )
 
 
-# Update Session
 @router.patch("/{session_id}", response_model=SessionRead, status_code=status.HTTP_200_OK)
 async def update_session(
     current_user: Annotated[User, Depends(auth.get_current_active_user)],
@@ -234,7 +229,6 @@ async def update_session(
     )
 
 
-# Delete Session
 @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_session(
     current_user: Annotated[User, Depends(auth.get_current_active_user)],
