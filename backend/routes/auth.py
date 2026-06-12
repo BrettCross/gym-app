@@ -30,7 +30,6 @@ async def login(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
     access_token = auth.create_access_token(user)
     refresh_token = await auth.create_refresh_token(user)
 
@@ -54,10 +53,11 @@ async def refresh(refresh_data: TokenRefreshRequest):
         )
 
         jti = payload.get("jti")
-        username = payload.get("sub")
+        user_id = payload.get("sub")
+        username = payload.get("username")
         token_type = payload.get("type")
 
-        if not jti or username is None or token_type != "refresh":
+        if not jti or user_id is None or username is None or token_type != "refresh":
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
         token_doc = await RefreshToken.find_one(RefreshToken.jti == jti)

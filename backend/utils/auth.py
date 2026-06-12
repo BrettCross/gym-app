@@ -75,7 +75,8 @@ async def create_refresh_token(user: User) -> str:
     await db_token.insert()
 
     to_encode = {
-        "sub": user.username,
+        "sub": str(user.id),
+        "username": user.username,
         "jti": jti,
         "exp": expire,
         "type": "refresh"
@@ -91,7 +92,8 @@ def create_access_token(user: User) -> str:
 
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode = {
-        "sub": user.username,
+        "sub": str(user.id),
+        "username": user.username,
         "role": user.role,
         "exp": expire,
         "type": "access"
@@ -115,10 +117,11 @@ async def get_current_user(
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get("sub")
+        user_id = payload.get("sub")
+        username = payload.get("username")
         token_type = payload.get("type")
         role = payload.get("role")
-        if username is None or token_type != "access":
+        if user_id is None or username is None or token_type != "access":
             raise credentials_exception
         token_data = TokenData(username=username, role=role)
 
