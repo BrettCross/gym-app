@@ -47,6 +47,7 @@ The entire ecosystem is containerized for deterministic deployments.
 ```bash
 # Spin up API, DB, Redis, and Worker
 docker-compose up --build
+```
 
 ## 📈 Roadmap
 - **Predicate Pushdown**: Optimizing GET list endpoints for database-level user filtering.
